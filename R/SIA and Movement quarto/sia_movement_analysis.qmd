@@ -1,0 +1,438 @@
+---
+title: "Lake Trout Stable Isotope and Habitat Use"
+author: "Ben Hlina"
+format: html
+editor: visual
+project:
+     execute-dir: project
+execute:
+  echo: false
+  warning: false
+---
+
+### Purpose:
+
+To understand if fish that were captured from different basins have different habitat use (e.g., movement, temperature, and depth) that influences movement patterns and stable isotope signatures
+
+#### Calculating Movement:
+
+To determine the average amount of movement per month we used detection data, prepared for a network analysis that identified when a fish moved from one receiver grouping to another. The number times a fish moved between the same two locations was recorded and the shortest distance among all combinations of receiver groups was determined.
+
+```{r, warning = FALSE, echo = FALSE}
+# ---- bring in packages -----
+{
+  library(broom)
+  library(car)
+  library(dplyr)
+  library(emmeans)
+  library(ggplot2)
+  library(here)
+  library(lme4)
+  library(readr)
+  library(sf)
+  library(stringr)
+}
+```
+
+```{r, output = FALSE}
+# ---- bring in dataframe ------
+
+
+df <- read_rds(here("Saved Data", 
+                    "cleaned_lkt_tagged_sia.rds"))
+
+
+edges_sf <- read_rds(here("Saved Data", 
+                          "lkt_edges_sf.rds"))
+
+# ---- Bring in shapefile ------
+p_lake <- st_read(dsn = here::here("Shapefiles",
+                                   "."),
+                  layer = "plake_edit_wo_link") %>% 
+  
+  dplyr::select(AREA_GEO, geometry)
+p_lake_utm <- p_lake %>% 
+  st_transform(., crs = 32618)
+# ---- bring in acoustic data -----
+
+at <- read_rds(here("Saved Data", 
+                    "kenauk lake trout 2017 - 2021.rds"))
+```
+
+```{r}
+# plot distances -----
+edges_sf %>% 
+  group_by(from_to, cost_dist, geometry) %>% 
+  summarise() %>% 
+  ggplot() + 
+  geom_sf(data = p_lake_utm, fill = NA) + 
+  geom_sf(aes(colour = cost_dist), linewidth = 1) + 
+  scale_colour_viridis_c(option = "B", end = 0.75, name = "Cost Distance (m)") +
+  theme_bw(base_size = 15) +
+  theme(panel.grid = element_blank(), 
+        axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  labs(
+    x = "Longitude", 
+    y = "Latitude"
+  )
+
+```
+
+```{r}
+df <- df %>% 
+  filter(c_13 != is.na(c_13))
+# ---- calculate distance for each month for each year ---- 
+
+dis_my <- edges_sf %>% 
+  st_drop_geometry() %>% 
+  as_tibble() %>% 
+  dplyr::select(floy_tag, fish_basin, month, from_nam, to_nam, 
+                season, year, 
+                weight, cost_dist) %>% 
+  mutate(
+    dis = weight * cost_dist, 
+    dis_km = dis / 1000, 
+    dis_cubed = dis_km ^ (1 / 3)
+  )
+
+dis_m <- dis_my %>% 
+  group_by(
+    floy_tag, fish_basin, month
+  ) %>% 
+  summarise(
+    sum_dis = sum(dis_cubed),
+    sum_dis_raw = sum(dis_km), 
+  ) %>% 
+  ungroup()
+
+dis_mean <- dis_m %>% 
+  group_by(floy_tag, fish_basin) %>% 
+  summarise(
+    mean_dis_raw = mean(sum_dis_raw), 
+    sem_dis_raw = sd(sum_dis_raw) / sqrt(n()), 
+    mean_dis = mean(sum_dis), 
+    sem_dis = sd(sum_dis) / sqrt(n())
+  ) %>% 
+  ungroup()
+
+
+df_movment <- df %>% 
+  left_join(dis_mean, by = c("sample" = "floy_tag"))
+
+
+df_movment_heard <- df_movment %>% 
+  filter(mean_dis != is.na(mean_dis))
+```
+
+Once we have the number of trips between two locations calculated we multiplied it by the shortest distance between two locations. Total movement was calculated for each month by summing all distances. The average over the course of 12 months was taken and the cubed root was used to scale the data. The movement data then can be tied to each stable isotope and analyzed for patterns.
+
+## $\delta^{13}$C *versus* $\delta^{15}$N with movement as colour
+
+```{r}
+# ---- isotopes by basin with basic ellipses plot -----
+ggplot(data = df_movment_heard, 
+       aes(x = c_13, y = n_15)) + 
+  geom_point(size = 5, aes(shape = basin, 
+                           fill = mean_dis), 
+             colour = "black") +
+  scale_shape_manual(values = c(21:23), 
+                     name = "Basin") + 
+  scale_fill_viridis_c(begin = 0.25, end = 0.95, 
+                       option = "D",
+                       breaks = seq(0, 150, 50), 
+                       limits = c(0, 150),
+                       name = expression(
+                         paste("Movement (", sqrt("km / month", "" ^ 3), 
+                               ")")),  
+                       # alpha = 0.65
+  ) + 
+  theme_bw(base_size = 15) +
+  theme(axis.text = element_text(colour = "black"),
+        panel.grid = element_blank(), 
+        legend.position = c(0.30, 0.80), 
+        # legend.title.align = 0.5,
+        legend.box = "horizontal",
+        legend.background = element_blank()) + 
+  labs(x = expression(paste(delta ^ 13, "C")), 
+       y = expression(paste(delta ^ 15, "N"))) 
+```
+
+## $\delta^{15}$N *versus* Movement ± sd with colour as basin
+
+```{r}
+# ggsave(filename = here("Plots", 
+#                        "movement and isotopes", 
+#                        "c_13_n_15_distance_traveled.png"), 
+#        width = 11, height = 8.5, plot = p)
+
+
+ggplot(data = df_movment_heard, 
+       aes(x = n_15, y = mean_dis)) + 
+  geom_point(size = 5, aes(fill = basin), 
+             colour = "black", 
+             shape = 21, stroke = 0.8) +
+  geom_errorbar(aes(ymin = mean_dis - sem_dis, 
+                    ymax = mean_dis + sem_dis), width = 0.05) +
+  # scale_shape_manual(values = c(21:23), 
+  #                    name = "Basin") + 
+  scale_fill_viridis_d(begin = 0.25, end = 0.84, 
+                       option = "D", 
+                       name = "Basin",
+                       alpha = 0.75
+  ) +
+  scale_y_continuous(breaks = seq(0, 175, 25)) + 
+  theme_bw(base_size = 15) +
+  theme(axis.text = element_text(colour = "black"),
+        panel.grid = element_blank(), 
+        legend.position = c(0.92, 0.85), 
+        # legend.title.align = 0.5,
+        legend.box = "horizontal",
+        legend.background = element_blank()) + 
+  labs(x = expression(paste(delta ^ 15, "N")), 
+       y = expression(paste("Movement (", sqrt("km / month", "" ^ 3), 
+                            ")")))
+```
+
+## $\delta^{13}$C *versus* Movement ± sd with colour as basin
+
+```{r}
+# 
+# ggsave(filename = here("Plots", 
+#                        "movement and isotopes", 
+#                        "d15N_distance_traveled.png"), 
+#        width = 11, height = 8.5, plot = p1)
+
+
+ggplot(data = df_movment_heard, 
+       aes(x = c_13, y = mean_dis)) + 
+  geom_point(size = 5, aes(fill = basin), 
+             colour = "black", 
+             shape = 21, stroke = 0.8) +
+  geom_errorbar(aes(ymin = mean_dis - sem_dis, 
+                    ymax = mean_dis + sem_dis), width = 0.05) +
+  # scale_shape_manual(values = c(21:23), 
+  #                    name = "Basin") + 
+  scale_fill_viridis_d(begin = 0.25, end = 0.85, 
+                       option = "D", 
+                       name = "Basin",
+                       alpha = 0.75
+  ) +
+  scale_y_continuous(breaks = seq(0, 175, 25)) + 
+  theme_bw(base_size = 15) +
+  geom_segment(aes(x = -29, y = 177.5, xend = -32, yend = 177.5),
+               arrow = arrow(length = unit(0.5, "cm"))) + 
+  theme_bw(base_size = 15) + 
+  geom_segment(aes(x = -27.28392, y = 177.5, xend = -24.28392, yend = 177.5),
+               arrow = arrow(length = unit(0.5, "cm"))) +
+  geom_text(
+    aes(x = (-29 + -2.35), y = 180), label = "Pelagic",
+    size = 9, vjust = 0, hjust = 0, check_overlap = TRUE) +
+  geom_text(
+    aes(x = (-27.3 + 0.65), y = 180), label = "Littoral",
+    size = 9, vjust = 0, hjust = 0, check_overlap = TRUE) +
+  
+  
+  
+  theme(axis.text = element_text(colour = "black"),
+        panel.grid = element_blank(), 
+        legend.position = c(0.92, 0.85),
+        # legend.title.align = 0.5,
+        legend.box = "horizontal",
+        legend.background = element_blank()) + 
+  labs(x = expression(paste(delta ^ 13, "C")), 
+       y = expression(paste("Movement (", sqrt("km / month", "" ^ 3), 
+                            ")")))
+```
+
+```{r}
+df_short <- df %>% 
+  select(sample, c_13, n_15, tl_mm, fl_mm, girth_mm, wt_g)
+# ---- mean depth for each month ==== 
+at_depth <- at %>% 
+  filter(sensor_unit == "m") %>% 
+  mutate(
+    fish_basin = str_replace(fish_basin, " Basin", "") %>% 
+      factor(., level = c("East", "West", "North"))
+  ) %>% 
+  group_by(floy_tag, fish_basin, 
+           month
+  ) %>% 
+  summarise(
+    depth = mean(sensor_value), 
+    var = var(sensor_value),
+    sd = sd(sensor_value), 
+    sem = sd(sensor_value) / sqrt(n())
+  ) %>% 
+  ungroup()
+# at_depth
+
+# ---- mean depth across months ----- 
+at_depth_sum <- at_depth %>% 
+  group_by(floy_tag, fish_basin) %>% 
+  summarise(
+    mean_depth = mean(depth), 
+    sd = sd(depth), 
+    var_depth = var(depth), 
+    sem = sd(depth) / sqrt(n())
+  ) %>% 
+  ungroup()
+# print(n = 100, at_depth)
+
+# ---- join mean depth across months to isotope data ----
+ati <- at_depth_sum %>% 
+  left_join(df_short, by = c("floy_tag" = "sample"))
+```
+
+## $\delta^{13}$C *versus* mean depth use ± sd with colour as basin
+
+```{r}
+# ---- plot mean depth across months for d13C -----
+ggplot(data = ati, aes(x = c_13, y = mean_depth)) + 
+  geom_hline(yintercept = 0, linetype = 2, linewidth = 1) +
+  geom_point(size = 4, aes(fill = fish_basin), 
+             shape = 21, stroke = 0.8) + 
+  # stat_ellipse(aes(colour = fish_basin), 
+  #              type = "norm", linetype = 1,
+  # linewidth = 1) +
+  
+  geom_errorbar(aes(ymin = mean_depth - sem, 
+                    ymax = mean_depth + sem), width = 0.05) +
+  scale_fill_viridis_d(begin = 0.25, end = 0.85, 
+                       option = "D", 
+                       name = "Basin") + 
+  scale_y_reverse() + 
+  theme_bw(base_size = 15) + 
+  theme(
+    panel.grid = element_blank(), 
+    legend.position = c(0.92, 0.85)
+  ) + 
+  labs(x = expression(paste(delta ^ 13, "C")), 
+       y = expression(paste("Depth Use (m ",  
+                            month ^ -1, ")")))
+```
+
+```{r}
+# ---- mean temp for each month ==== 
+at_temp <- at %>% 
+  filter(sensor_unit %in% "°C") %>% 
+  mutate(
+    fish_basin = str_replace(fish_basin, " Basin", "") %>% 
+      factor(., level = c("East", "West", "North"))
+  ) %>% 
+  group_by(floy_tag, fish_basin, 
+           month
+           ) %>% 
+  summarise(
+    temp = mean(sensor_value), 
+    var = var(sensor_value),
+    sd = sd(sensor_value), 
+    sem = sd(sensor_value) / sqrt(n())
+  ) %>% 
+  ungroup()
+
+# ---- mean temp across months ----- 
+at_temp_sum <- at_temp %>% 
+  group_by(floy_tag, fish_basin) %>% 
+  summarise(
+    mean_temp = mean(temp), 
+    sd = sd(temp), 
+    var_temp = var(temp), 
+    sem = sd(temp) / sqrt(n())
+  ) %>% 
+  ungroup()
+
+
+# ---- join mean temp across months to isotope data ----
+ati <- at_temp_sum %>% 
+  left_join(df_short, by = c("floy_tag" = "sample"))
+```
+
+## $\delta^{13}$C *versus* mean temperature use ± sd with colour as basin
+
+```{r}
+# ---- plot mean temp across months for d13C -----
+ggplot(data = ati, aes(x = c_13, y = mean_temp)) + 
+  geom_point(size = 4, aes(fill = fish_basin), 
+             shape = 21, stroke = 0.8) + 
+  # stat_ellipse(aes(colour = fish_basin), 
+  #              type = "norm", linetype = 1,
+  # linewidth = 1) +
+  geom_errorbar(aes(ymin = mean_temp - sem, 
+                    ymax = mean_temp + sem), width = 0.05) +
+  scale_fill_viridis_d(begin = 0.15, end = 0.85, 
+                         option = "D", 
+                         name = "Basin") + 
+  theme_bw(base_size = 15) + 
+  theme(
+    panel.grid = element_blank(), 
+    legend.position = c(0.10, 0.85)
+  ) + 
+  labs(x = expression(paste(delta ^ 13, "C")), 
+       y = expression(paste("Mean Temperature Use (°C ",  
+       month ^ -1, ")")))
+```
+
+## Bayesian von Bertalanffy Growth Model
+
+![](images/growth_curve_lt_bayes.png)
+
+```{r}
+
+# p <- read_rds(here("von B Plots",
+#                    "growth_curve_lt_bayes.rds"))
+#   p
+
+```
+
+## Bayesian von Bertalanffy Growth Model For Each Basin
+
+```{r}
+
+p1 <- read_rds(here("von B Plots", 
+                   "growth_curve_lt_bayes_basin.rds")) 
+p1 <- p1 + theme(
+  legend.position = c(0.89, 0.20), 
+)
+p1
+
+```
+
+## Posterior Distrubtion for von Bertalanffy Growth Model
+
+```{r}
+
+p2 <- read_rds(here("von B Plots", 
+                   "posterior distribution_lkt_age_length.rds")) 
+p2 <- p2 + theme(
+  legend.position = c(0.82, 0.75),
+)
+p2
+```
+
+## Posterior Distrubtion for von Bertalanffy Growth Model Ridgeline Plot
+
+```{r}
+
+p3 <- read_rds(here("von B Plots", 
+                   "predicted_density_ridge_tornado_age_length.rds")) 
+p3
+```
+
+## Posterior Distrubtion for von Bertalanffy Growth Model for each basin
+
+```{r}
+
+p4 <- read_rds(here("von B Plots", 
+                   "posterior_distribution_lkt_age_length_basin_.rds")) 
+p4
+
+```
+
+## Posterior Distrubtion for von Bertalanffy Growth Model for each basin Ridgeline plot
+
+```{r}
+
+p5 <- read_rds(here("von B Plots", 
+                   "predicted_density_ridge_tornado_age_length_basin_diff.rds")) 
+p5
+```
