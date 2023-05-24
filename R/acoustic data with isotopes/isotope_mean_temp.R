@@ -78,7 +78,8 @@ at_temp_sum <- at_temp %>%
     mean_temp = mean(te), 
     sd = sd(te), 
     var_temp = var(te), 
-    sem = sd(te) / sqrt(n())
+    sem = sd(te) / sqrt(n()), 
+    range = max(te) - min(te)
   ) %>% 
   ungroup()
 
@@ -86,28 +87,29 @@ at_temp_sum <- at_temp %>%
 # ---- join mean temp across months to isotope data ----
 ati <- at_temp_sum %>% 
   left_join(df_short, by = c("floy_tag" = "sample")) 
-
-
+# 
+ati_s <- ati %>%
+  filter(floy_tag != "07478")
 # ---- plot mean temp across months for d13C -----
-ggplot(data = ati, aes(x = c_13, y = mean_temp)) + 
+ggplot(data = ati, aes(y = c_13, x = mean_temp)) + 
   geom_point(size = 4, aes(fill = fish_basin), 
              shape = 21, stroke = 0.8) + 
   # stat_ellipse(aes(colour = fish_basin), 
   #              type = "norm", linetype = 1,
   # linewidth = 1) +
-  geom_errorbar(aes(ymin = mean_temp - sem, 
-                    ymax = mean_temp + sem), width = 0.05) +
+  # geom_errorbar(aes(xmin = mean_temp - sem, 
+  #                   xmax = mean_temp + sem), width = 0.05) +
   scale_fill_viridis_d(begin = 0.25, end = 0.85, 
                        option = "D", 
                        name = "Basin") + 
-  scale_x_continuous(breaks = rev(seq(-26, -31, -1))) + 
+  scale_y_continuous(breaks = rev(seq(-26, -31, -1))) + 
   theme_bw(base_size = 15) + 
   theme(
     panel.grid = element_blank(), 
     legend.position = c(0.85, 0.9)
   ) + 
-  labs(x = expression(paste(delta ^ 13, "C")), 
-       y = "Mean Monthly Temperature Use (°C)") -> p 
+  labs(y = expression(paste(delta ^ 13, "C")), 
+       x = "Mean Monthly Temperature Use (°C)") -> p 
 
 
 p
