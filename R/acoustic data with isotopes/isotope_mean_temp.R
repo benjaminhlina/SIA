@@ -1,20 +1,23 @@
 # ---- bring in packages -----
-library(broom.mixed)
-library(car)
-library(dplyr)
-library(DHARMa)
-library(fitdistrplus)
-library(ggplot2)
-library(glmmTMB)
-library(here)
-library(lubridate)
-library(openxlsx)
-library(purrr)
-library(readr)
-library(stringr)
-library(sf)
-library(tidyr)
-
+{
+  library(broom.mixed)
+  library(car)
+  library(dplyr)
+  library(DHARMa)
+  library(emmeans)
+  library(fitdistrplus)
+  library(ggplot2)
+  library(glmmTMB)
+  library(here)
+  library(lme4)
+  library(MASS)
+  library(openxlsx)
+  library(purrr)
+  library(readr)
+  library(robustbase)
+  library(stringr)
+  library(tidyr)
+}
 # ---- bring in acoustic data -----
 
 at <- read_rds(here("Saved Data", 
