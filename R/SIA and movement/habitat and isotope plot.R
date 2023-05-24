@@ -41,7 +41,9 @@ p4 <- p4 +
   )
 p5 <- p5 + 
   theme(
-    legend.position = c(0.82, 0.19)
+    # legend.position = "none"
+    # legend.position = c(0.85, 0.21)
+    legend.position = c(0.19, 0.81)
     )
 # ---- combine all plots ----- 
 p6 <- p + p2 + p4 + p1 + p3 + p5
