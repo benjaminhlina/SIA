@@ -166,15 +166,14 @@ glimpse(ati)
 ati <- ati %>% 
   mutate(
     temp_p_sem = mean_temp + sem,
-    temp_m_sem = mean_temp - sem
+    temp_m_sem = mean_temp - sem, 
+    sem_range = temp_p_sem - temp_m_sem,
+    sd_range =  (mean_temp + sd) - (mean_temp - sd)
   )
 
-descdist(ati$mean_temp)
 descdist(ati$c_13)
 descdist(ati$n_15)
 
-ggplot(data = ati, aes(x = mean_temp)) +
-  geom_histogram()
 
 ggplot(data = ati, aes(x = c_13)) +
   geom_histogram()
