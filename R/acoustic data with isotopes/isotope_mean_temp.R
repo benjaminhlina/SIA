@@ -123,25 +123,25 @@ write_rds(p, here("Saved Plots",
                   "c_13_temp_overall.rds"))
 
 # ---- nitrogren vs. temp -----
-ggplot(data = ati, aes(x = n_15, y = mean_temp)) + 
+ggplot(data = ati, aes(y = n_15, x = mean_temp)) + 
   geom_point(size = 4, aes(fill = fish_basin), 
              shape = 21, stroke = 0.8) + 
   # stat_ellipse(aes(colour = fish_basin), 
   #              type = "norm", linetype = 1,
   # linewidth = 1) +
-  geom_errorbar(aes(ymin = mean_temp - sem, 
-                    ymax = mean_temp + sem), width = 0.05) +
+  # geom_errorbar(aes(xmin = mean_temp - sem, 
+  #                   xmax = mean_temp + sem), width = 0.05) +
   scale_fill_viridis_d(begin = 0.25, end = 0.85, 
                        option = "D", 
                        name = "Basin") + 
-  scale_x_continuous(breaks = seq(9, 15, 1)) + 
+  scale_y_continuous(breaks = seq(9, 15, 1)) + 
   theme_bw(base_size = 15) + 
   theme(
     panel.grid = element_blank(), 
     legend.position = c(0.85, 0.9)
   ) + 
-  labs(x = expression(paste(delta ^ 15, "N")), 
-       y = "Mean Monthly Temperature Use (°C)") -> p1
+  labs(y = expression(paste(delta ^ 15, "N")), 
+       x = "Mean Monthly Temperature Use (°C)") -> p1
 
 
 p1
@@ -152,7 +152,7 @@ ggsave(filename = here("Plots",
 
 
 write_rds(p1, here("Saved Plots",
-                  "n_15_temp_overall.rds"))
+                   "n_15_temp_overall.rds"))
 
 
 
@@ -186,50 +186,23 @@ ggplot(data = ati, aes(x = n_15)) +
 glimpse(ati)
 
 # ---- create model for c_13 ~ mean_temp -----
-# m <- mixed_model(fixed = dis_mean_o ~ c_13 + basin, 
-#                  random = ~ c_13 | sample, 
-#                  data = df_movment_heard_o,
-#                   family =)
-m <- glmmTMB(c_13 ~ mean_temp * fish_basin + (1|floy_tag) +
-               (1|sem),
-             family = gaussian(link = "identity"),
-             data = ati,
-             REML = TRUE)
-# model fit evalauteion 
-res <- simulateResiduals(m)
 
-plot(res)
+options(contrasts = c("contr.sum", "contr.poly"))
 
-Anova(mod = m)
+m <- lm(c_13 ~ mean_temp * fish_basin,
+        contrasts = list(fish_basin = "contr.sum"),
+        data = ati)
+drop1(m, .~., test = "F")
 # model section 
-m1 <- update(m, ~ mean_temp + (1|floy_tag), 
-             # control = glmmTMBControl(optimizer=optim,
-             #                          optArgs = list(method = "BFGS")
-)
-m2 <- update(m, ~ mean_temp)
-
-# m1 <- glmmTMB(mean_temp ~ c_13 * basin + (1|sample),
-#               data = ati,
-#               family = Gamma(link = "log"),
-#               REML = TRUE)
-# 
-# res1 <- simulateResiduals(m1)
-# 
-# plot(res1)
-# Anova(m1)
-# 
-# 
-# res2 <- simulateResiduals(m2)
-
-# make list of only the models you hav! 
-
-
+m1 <- update(m, ~ mean_temp) 
+m2 <- update(m, ~ fish_basin) 
+m3 <- update(m, ~ mean_temp + fish_basin) 
 
 # ---- create model list for model selection ------
-model_list <- list(m, m1, m2)
+model_list <- list(m, m1, m2, m3)
 # give the elements useful names
 names(model_list) <- c("m", 
-                       "m1", "m2")
+                       "m1", "m2", "m3")
 
 glance(m)
 # get the summaries using `lapply
