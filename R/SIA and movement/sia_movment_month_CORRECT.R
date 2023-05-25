@@ -288,16 +288,10 @@ write_rds(p2, here("Saved Plots",
 # ---- ANALYSIS -----
 # ---- look at distributions ----
 
-dfs <- df_movment_overall %>%
-  filter(sample != "07478")
+
 glimpse(df_movment_overall)
-descdist(df_movment_overall$mean_dis)
 descdist(df_movment_overall$c_13)
 descdist(df_movment_overall$n_15)
-descdist(dfs$n_15)
-
-ggplot(data = df_movment_overall, aes(x = mean_dis)) +
-  geom_histogram()
 
 ggplot(data = df_movment_overall, aes(x = c_13)) +
   geom_histogram()
@@ -309,43 +303,45 @@ ggplot(data = df_movment_overall, aes(x = n_15)) +
 glimpse(df_movment_overall)
 
 # ---- create model for c_13 ~ mean_dis -----
-# m <- mixed_model(fixed = dis_mean_o ~ c_13 + basin, 
-#                  random = ~ c_13 | sample, 
-#                  data = df_movment_heard_o,
-#                   family =)
-m <- glmmTMB(c_13 ~ mean_dis * basin + (1|sample),
-             family = gaussian(link = "identity"),
-             data = df_movment_overall,
-             REML = TRUE)
-# model fit evalauteion 
+options(contrasts = c("contr.sum", "contr.poly"))
+
+# m <- gam(c_13 ~ mean_dis * basin,
+#          family = scat,
+#          method = "REML",
+#          data = df_movment_overall)
+
+m <- lm(c_13 ~ mean_dis * basin,
+        contrasts = list(basin = "contr.sum"),
+         # family = scat, 
+         # method = "REML",
+         data = df_movment_overall)
+
+
+# appraise(m)
+# anova.gam(m)
+# ---- create specific stuff for model saving -----
+hist(residuals(m))
 res <- simulateResiduals(m)
-
 plot(res)
+# appraise(m)
+par(mfrow = c(2, 2))
+# gam.check(m)
+plot(m)
+par(mfrow = c(1, 1))
 
-Anova(mod = m)
-# model section 
-m1 <- update(m, ~ mean_dis + (1|sample), 
-             control = glmmTMBControl(optimizer=optim,
-                                      optArgs = list(method = "BFGS"))
-             )
-m2 <- update(m, ~ mean_dis)
-
-# m1 <- glmmTMB(mean_dis ~ c_13 * basin + (1|sample),
-#               data = df_movment_overall,
-#               family = Gamma(link = "log"),
-#               REML = TRUE)
-# 
-# res1 <- simulateResiduals(m1)
-# 
-# plot(res1)
-# Anova(m1)
+me_d13c <- Anova(m, type = "III")
+# m_aov <- anova.gam(m)
 # 
 # 
-# res2 <- simulateResiduals(m2)
+# me_d13c <- m_aov$pTerms.table %>% 
+#   as_tibble(rownames = "terms") %>% 
+#   janitor::clean_names()
+me_d13c
 
-# make list of only the models you hav! 
-
-
+# ---- model section ----  
+m1 <- update(m, ~ mean_dis)
+m2 <- update(m, ~ basin)
+m3 <- update(m, ~ mean_dis + basin)
 
 # ---- create model list for model selection ------
 model_list <- list(m, m1, m2)
