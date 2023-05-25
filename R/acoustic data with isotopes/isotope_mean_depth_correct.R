@@ -183,6 +183,23 @@ glimpse(ati)
 m <- lm(c_13 ~ mean_depth * fish_basin,
         data = ati, 
         contrasts = list(fish_basin = "contr.sum"))
+# ---- create specific stuff for model saving -----
+
+drop1(m, .~., test = "F")
+shapiro.test(residuals(m))
+par(mfrow = c(2, 2))
+plot(m)
+par(mfrow = c(1, 1))
+cooksD <- cooks.distance(m)
+influential <- cooksD[(cooksD > (3 * mean(cooksD, na.rm = TRUE)))]
+influential
+
+# a few outliers but their affect is pretty maginal 
+car::Anova(m, type = "III")
+
+
+me_d13c_d <- tidy(car::Anova(m))
+
 
 # model section 
 m1 <- update(m, ~ mean_depth)
