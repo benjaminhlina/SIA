@@ -365,56 +365,39 @@ glance_summary <- map_df(glance_list, ~as.data.frame(.x), .id = "id") %>%
 
 glance_summary
 
-glance_summary <- glance_summary %>% 
+gs_d13c <- glance_summary %>% 
   mutate(
-         delta_AIC = AIC - first(AIC), 
-         AIC_weight = exp(-0.5 * delta_AIC) / sum(exp(-0.5 * delta_AIC))
+    delta_AIC = AIC - first(AIC), 
+    AIC_weight = exp(-0.5 * delta_AIC) / sum(exp(-0.5 * delta_AIC))
   ) %>% 
   dplyr::select(model:AIC, delta_AIC, AIC_weight, BIC:df.residual)
-glance_summary
+gs_d13c
 
-glance_summary %>%
-  openxlsx::write.xlsx(here::here("results",
-                                  "d13C Habitat",
-                                  "d13C_movement_model_selection.xlsx"))
-
-# ---- create specific stuff for model saving -----
-car::Anova(m)
-summary(m)
-
-main_effects <- tidy(car::Anova(m))
-
-
-
-ind_effects <- tidy(m)
-
-
-# main_effects %>% 
-main_effects %>% 
-  openxlsx::write.xlsx(here::here("results",
-                                  "d13C Habitat",
-                                  "d13C_movment_lmer_main_effect.xlsx"))
-ind_effects %>%
-  openxlsx::write.xlsx(here::here("results",
-                                  "d13C Habitat",
-                                  "d13C_movment_lmer_ind_effect.xlsx"))
 
 # ---- Nitrogen vs movement -----
 
-m3 <- glmmTMB(n_15 ~ mean_dis * basin + (1|sample),
-              data = df_movment_overall,
-              family = Gamma(link = "log"),
-              control = glmmTMBControl(optimizer=optim,
-                                     optArgs = list(method = "BFGS")),
-              REML = TRUE)
 
-# model fit evaluation 
-res3 <- simulateResiduals(m3)
-plot(res3)
-Anova(m3)
+
+m3 <- gam(n_15 ~ mean_dis * basin,
+          data = df_movment_overall, 
+          family = scat(link = "identity"), 
+          method = "REML"
+)
+
+appraise(m3)
+summary(m3)$sp.criterion
+m3_aov <- anova.gam(m3)
+me_d15n<- m3_aov$pTerms.table %>% 
+  as_tibble(rownames = "terms") %>% 
+  janitor::clean_names()
+me_d15n
+
+# gam.check(m3)
+
 # model section 
-m4 <- update(m3, ~ mean_dis + (1|sample))
-m5 <- update(m3, ~ mean_dis)
+m4 <- update(m3, ~ mean_dis)
+m5 <- update(m3, ~ basin)
+m6 <- update(m3, ~ mean_dis + basin)
 
 
 model_list <- list(m3, m4, m5)
