@@ -312,9 +312,9 @@ options(contrasts = c("contr.sum", "contr.poly"))
 
 m <- lm(c_13 ~ mean_dis * basin,
         contrasts = list(basin = "contr.sum"),
-         # family = scat, 
-         # method = "REML",
-         data = df_movment_overall)
+        # family = scat, 
+        # method = "REML",
+        data = df_movment_overall)
 
 
 # appraise(m)
@@ -329,13 +329,14 @@ par(mfrow = c(2, 2))
 plot(m)
 par(mfrow = c(1, 1))
 
-me_d13c <- Anova(m, type = "III")
+Anova(m, type = "III")
 # m_aov <- anova.gam(m)
 # 
 # 
 # me_d13c <- m_aov$pTerms.table %>% 
 #   as_tibble(rownames = "terms") %>% 
 #   janitor::clean_names()
+me_d13c <- tidy(Anova(m, type = "III"))
 me_d13c
 
 # ---- model section ----  
