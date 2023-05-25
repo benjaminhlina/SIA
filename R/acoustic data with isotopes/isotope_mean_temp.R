@@ -223,16 +223,19 @@ glance(m)
 summary_list <- lapply(model_list, function(x) tidy(x, parametric = TRUE))
 glance_list <- lapply(model_list, glance)
 
+family_list <- lapply(model_list, family)
+
+
 glance_summary <- map_df(glance_list, ~as.data.frame(.x), .id = "id") %>% 
   mutate(model = lapply(model_list, formula) %>%
-           as.character() 
+           as.character(), 
+         family = map(family_list, pluck, 1),
+         link = map(family_list, pluck, 2)
+         
   ) %>% 
-  dplyr::select(model, id:df.residual) %>% 
+  dplyr::select(model,family, link, id:df.residual) %>%
   arrange(AIC)
-
-
 glance_summary
-
 gs_d13c <- glance_summary %>% 
   mutate(
     delta_AIC = AIC - first(AIC), 
@@ -287,14 +290,18 @@ glance(m6)
 summary_list <- lapply(model_list, function(x) tidy(x, parametric = TRUE))
 glance_list <- lapply(model_list, glance)
 
+family_list <- lapply(model_list, family)
+
 
 glance_summary <- map_df(glance_list, ~as.data.frame(.x), .id = "id") %>% 
   mutate(model = lapply(model_list, formula) %>%
-           as.character()
+           as.character(), 
+         family = map(family_list, pluck, 1),
+         link = map(family_list, pluck, 2)
+         
   ) %>% 
-  dplyr::select(model, id:df.residual) %>% 
+  dplyr::select(model,family, link, id:df.residual) %>%
   arrange(AIC)
-
 glance_summary
 
 gs_d15n_outlier <- glance_summary %>% 
@@ -303,7 +310,7 @@ gs_d15n_outlier <- glance_summary %>%
     AIC_weight = exp(-0.5 * delta_AIC) / sum(exp(-0.5 * delta_AIC))
   ) %>% 
   dplyr::select(model:AIC, delta_AIC, AIC_weight, BIC:df.residual)
-gs_d15n
+gs_d15n_outlier
 
 
 
@@ -341,19 +348,24 @@ glance(m7)
 
 summary_list <- lapply(model_list, function(x) tidy(x, parametric = TRUE))
 glance_list <- lapply(model_list, glance)
+
+
 # glance_list <- lapply(glance_list, function(x) mutate_at(x, 
 #                                                          .vars = "logLik", 
 #                                                          as.numeric))
 
+family_list <- lapply(model_list, family)
+
 
 glance_summary <- map_df(glance_list, ~as.data.frame(.x), .id = "id") %>% 
   mutate(model = lapply(model_list, formula) %>%
-           as.character()
+           as.character(), 
+         family = map(family_list, pluck, 1),
+         link = map(family_list, pluck, 2)
+         
   ) %>% 
-  dplyr::select(model, id:df.residual) %>% 
+  dplyr::select(model,family, link, id:df.residual) %>%
   arrange(AIC)
-
-
 glance_summary
 
 gs_d15n <- glance_summary %>% 
@@ -376,7 +388,7 @@ model_fit <- bind_rows(list(d13c = gs_d13c,
   mutate(
     metric = "temp"
   ) %>% 
-  dplyr::select(id, metric, model, r.squared:df.residual)
+  dplyr::select(id, metric, model, family, link, r.squared:df.residual)
 
 
 model_effects <- bind_rows(list(d13c = me_d13c,

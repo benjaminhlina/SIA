@@ -218,15 +218,18 @@ glance(m)
 
 summary_list <- lapply(model_list, function(x) tidy(x, parametric = TRUE))
 glance_list <- lapply(model_list, glance)
+family_list <- lapply(model_list, family)
+
 
 glance_summary <- map_df(glance_list, ~as.data.frame(.x), .id = "id") %>% 
   mutate(model = lapply(model_list, formula) %>%
-           as.character() 
+           as.character(), 
+         family = map(family_list, pluck, 1),
+         link = map(family_list, pluck, 2)
+         
   ) %>% 
-  dplyr::select(model, id:df.residual) %>% 
+  dplyr::select(model,family, link, id:df.residual) %>%
   arrange(AIC)
-
-
 glance_summary
 
 gs_d13c_d <- glance_summary %>% 
@@ -284,15 +287,18 @@ glance(m3)
 
 summary_list <- lapply(model_list, function(x) tidy(x, parametric = TRUE))
 glance_list <- lapply(model_list, glance)
+family_list <- lapply(model_list, family)
+
 
 glance_summary <- map_df(glance_list, ~as.data.frame(.x), .id = "id") %>% 
   mutate(model = lapply(model_list, formula) %>%
-           as.character() 
+           as.character(), 
+         family = map(family_list, pluck, 1),
+         link = map(family_list, pluck, 2)
+         
   ) %>% 
-  dplyr::select(model, id:df.residual) %>% 
+  dplyr::select(model,family, link, id:df.residual) %>%
   arrange(AIC)
-
-
 glance_summary
 
 gs_d15n_d_outlier <- glance_summary %>% 
@@ -356,15 +362,18 @@ glance_list <- lapply(model_list, glance)
 #                                                          .vars = "logLik", 
 #                                                          as.numeric))
 
+family_list <- lapply(model_list, family)
+
 
 glance_summary <- map_df(glance_list, ~as.data.frame(.x), .id = "id") %>% 
   mutate(model = lapply(model_list, formula) %>%
-           as.character()
+           as.character(), 
+         family = map(family_list, pluck, 1),
+         link = map(family_list, pluck, 2)
+         
   ) %>% 
-  dplyr::select(model, id:df.residual) %>% 
+  dplyr::select(model,family, link, id:df.residual) %>%
   arrange(AIC)
-
-
 glance_summary
 
 gs_d15n_d <- glance_summary %>% 
@@ -385,7 +394,7 @@ model_fit <- bind_rows(list(d13c = gs_d13c_d,
   mutate(
     metric = "depth"
   ) %>% 
-  dplyr::select(id, metric, model, r.squared:df.residual)
+  dplyr::select(id, metric, model, family, link, r.squared:df.residual)
 
 model_fit
 
