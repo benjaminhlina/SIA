@@ -402,7 +402,7 @@ write_rds(model_effects, here("Results",
 descdist(ati$mean_temp)
 
 
-m7 <- glm(mean_temp ~ c_13 * n_15,
+m11 <- glm(mean_temp ~ c_13 * n_15,
           data = ati,
           family = Gamma()
           )
@@ -415,71 +415,71 @@ plot(res)
 shapiro.test(residuals.glm(m7))
 
 
-
-summary(ati$mean_temp)
+# Becasue nothing is signficant it is inappropriate to use the model to predict
+# summary(ati$mean_temp)
+# #
+# nd <- expand_grid(
+#   c_13 = seq(-25.5, -31.5, length.out = 100),
+#   n_15 = seq(8.5, 15, length.out = 100),
+#   mean_temp = seq(4, 8, length.out = 100)
+# 
+# )
 #
-nd <- expand_grid(
-  c_13 = seq(-25.5, -31.5, length.out = 100),
-  n_15 = seq(8.5, 15, length.out = 100),
-  mean_temp = seq(4, 8, length.out = 100)
-
-)
-#
-fits <- predict(m7, newdata = nd, type = "response")
-
-preds <- bind_cols(nd, fits) %>%
-  rename(
-    fit = ...4
-  )
-
-preds
-
-ggplot() +
-
-  geom_raster(data = preds, aes(x = c_13,
-                              y = n_15, fill = fit), ) +
-  geom_point(data = ati, size = 4,
-             aes(y = n_15, x = c_13,
-                 fill = mean_temp),
-             shape = 21, stroke = 0.8
-             ) +
-#   # stat_ellipse(aes(colour = fish_basin),
-#   #              type = "norm", linetype = 1,
-#   # linewidth = 1) +
-#   # geom_errorbar(aes(xmin = mean_temp - sem,
-#   #                   xmax = mean_temp + sem), width = 0.05) +
-  scale_fill_viridis_c(name = "Temperature Use (°C)",
-                       option = "D",alpha = 0.5,
-                       breaks = seq(4, 8, 1),
-                       limit = c(4, 8)
-                       ) +
-  # scale_colour_viridis_c(
-  #   # begin = 0.25, end = 0.85,
-  #                      option = "D",
-  #                      name = "Observed\nTemperature Use (°C)",
-  #                      ) +
-  scale_x_continuous(breaks = rev(seq(-25, -31, -1))) + 
-  scale_y_continuous(breaks = seq(8, 15, 1)) + 
-  # scale_colour_viridis_c(
-  # scale_y_continuous(breaks = rev(seq(-26, -31, -1))) +
-  # facet_wrap(.~ fish_basin) +
-  coord_cartesian(expand = FALSE) +
-  theme_bw(base_size = 15) +
-  theme(
-    legend.title = element_text(hjust = 0.5),
-    panel.grid = element_blank(),
-    # legend.position = c(0.85, 0.9)
-  ) +
-  labs(
-    x = expression(paste(delta ^ 13, "C")),
-    y = expression(paste(delta ^ 15, "N"))) -> p3
-
-
-p3
-ggsave(filename = here("Plots",
-                       "temp use and isotopes",
-                       "mean_temp_month_d13c_raster_pred.png"), plot = p3,
-       width = 11, height = 8.5)
-
-write_rds(p3, here("Saved Plots",
-                   "d13c_d15n_temp_predicted.rds"))
+# fits <- predict(m7, newdata = nd, type = "response")
+# 
+# preds <- bind_cols(nd, fits) %>%
+#   rename(
+#     fit = ...4
+#   )
+# 
+# preds
+# 
+# ggplot() +
+# 
+#   geom_raster(data = preds, aes(x = c_13,
+#                               y = n_15, fill = fit), ) +
+#   geom_point(data = ati, size = 4,
+#              aes(y = n_15, x = c_13,
+#                  fill = mean_temp),
+#              shape = 21, stroke = 0.8
+#              ) +
+# #   # stat_ellipse(aes(colour = fish_basin),
+# #   #              type = "norm", linetype = 1,
+# #   # linewidth = 1) +
+# #   # geom_errorbar(aes(xmin = mean_temp - sem,
+# #   #                   xmax = mean_temp + sem), width = 0.05) +
+#   scale_fill_viridis_c(name = "Temperature Use (°C)",
+#                        option = "D",alpha = 0.5,
+#                        breaks = seq(4, 8, 1),
+#                        limit = c(4, 8)
+#                        ) +
+#   # scale_colour_viridis_c(
+#   #   # begin = 0.25, end = 0.85,
+#   #                      option = "D",
+#   #                      name = "Observed\nTemperature Use (°C)",
+#   #                      ) +
+#   scale_x_continuous(breaks = rev(seq(-25, -31, -1))) + 
+#   scale_y_continuous(breaks = seq(8, 15, 1)) + 
+#   # scale_colour_viridis_c(
+#   # scale_y_continuous(breaks = rev(seq(-26, -31, -1))) +
+#   # facet_wrap(.~ fish_basin) +
+#   coord_cartesian(expand = FALSE) +
+#   theme_bw(base_size = 15) +
+#   theme(
+#     legend.title = element_text(hjust = 0.5),
+#     panel.grid = element_blank(),
+#     # legend.position = c(0.85, 0.9)
+#   ) +
+#   labs(
+#     x = expression(paste(delta ^ 13, "C")),
+#     y = expression(paste(delta ^ 15, "N"))) -> p3
+# 
+# 
+# p3
+# ggsave(filename = here("Plots",
+#                        "temp use and isotopes",
+#                        "mean_temp_month_d13c_raster_pred.png"), plot = p3,
+#        width = 11, height = 8.5)
+# 
+# write_rds(p3, here("Saved Plots",
+#                    "d13c_d15n_temp_predicted.rds"))
