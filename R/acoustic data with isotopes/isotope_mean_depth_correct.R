@@ -238,28 +238,36 @@ gs_d13c_d <- glance_summary %>%
 
 gs_d13c_d
 
-
-# ---- create specific stuff for model saving -----
-
-drop1(m, .~., test = "F")
-shapiro.test(residuals(m))
-
-par(mfrow = c(2, 2))
-plot(m)
-par(mfrow = c(1, 1))
-cooksD <- cooks.distance(m)
-influential <- cooksD[(cooksD > (3 * mean(cooksD, na.rm = TRUE)))]
-influential
-# a few outliers but their affect is pretty maginal 
-car::Anova(m, type = "III")
-
-
-me_d13c_d <- tidy(car::Anova(m))
-
 # ---- Nitrogen vs movement -----
 
-m3 <- lm(n_15 ~ mean_depth * fish_basin,
-         data = ati)
+descdist(ati$n_15)
+
+m3 <- glm(n_15 ~ mean_depth * fish_basin,
+         data = ati, family = Gamma(link = "identity"), 
+         contrasts = list(fish_basin = "contr.sum")
+         )
+
+res <- simulateResiduals(m3)
+plot(res)
+# ---- create specific stuff for model saving -----
+drop1(m3, .~., test = "F")
+shapiro.test(residuals(m3))
+
+par(mfrow = c(2, 2))
+plot(m3)
+par(mfrow = c(1, 1))
+
+car::Anova(m3, type = "III")
+
+me_d15n_outlier <- tidy(car::Anova(m3, type = "III"))
+
+cooksD <- cooks.distance(m3)
+influential <- cooksD[(cooksD > (3 * mean(cooksD, na.rm = TRUE)))]
+influential
+
+# our large fish that is in at a higher trophic level is quite an outlier 
+# we will run the regression again without it and report both 
+
 # model section 
 m4 <- update(m3, ~ mean_depth)
 m5 <- update(m3, ~ fish_basin)
@@ -296,27 +304,19 @@ gs_d15n_d_outlier <- glance_summary %>%
 
 gs_d15n_d_outlier
 
-# ---- create specific stuff for model saving -----
-drop1(m3, .~., test = "F")
-shapiro.test(residuals(m3))
 
-par(mfrow = c(2, 2))
-plot(m3)
-par(mfrow = c(1, 1))
-
-car::Anova(m3, type = "III")
-
-me_d15n_outlier <- tidy(car::Anova(m3, type = "III"))
-
-cooksD <- cooks.distance(m3)
-influential <- cooksD[(cooksD > (3 * mean(cooksD, na.rm = TRUE)))]
-influential
-# our large fish that is in at a higher trophic level is quite an outlier 
-# we will run the regression again without it and report both 
 
 # ---- create model without large fish for d15n vs depth -----
 
+ati_s <- ati_s  %>% 
+  filter(n_15 != is.na(n_15))
 glimpse(ati_s)
+unique(is.na(ati_s$n_15))
+
+descdist(ati_s$n_15)
+ggplot(data = ati_s, aes(x = n_15)) + 
+  geom_histogram()
+
 
 m7 <- lm(n_15 ~ mean_depth * fish_basin, 
          data = ati_s,
@@ -324,6 +324,16 @@ m7 <- lm(n_15 ~ mean_depth * fish_basin,
 )
 
 Anova(m7, type = 3)
+# ---- create specific stuff for model saving -----
+car::Anova(m7, type = "III")
+par(mfrow = c(2, 2))
+plot(m7)
+par(mfrow = c(1, 1))
+shapiro.test(residuals(m7))
+
+me_d15n_d <- tidy(car::Anova(m7, type = "III"))
+
+
 # we can see our single outlier pulls so much that it affects the signficance
 # model section 
 m8 <- update(m7, ~ mean_depth)
