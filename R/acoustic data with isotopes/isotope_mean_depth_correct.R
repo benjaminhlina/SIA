@@ -270,54 +270,215 @@ glance_summary <- map_df(glance_list, ~as.data.frame(.x), .id = "id") %>%
 
 glance_summary
 
-glance_summary <- glance_summary %>% 
+gs_d15n_d_outlier <- glance_summary %>% 
   mutate(
     delta_AIC = AIC - first(AIC), 
     AIC_weight = exp(-0.5 * delta_AIC) / sum(exp(-0.5 * delta_AIC))
   ) %>% 
   dplyr::select(model:AIC, delta_AIC, AIC_weight, BIC:df.residual)
-glance_summary
 
-glance_summary %>%
-  openxlsx::write.xlsx(here::here("results",
-                                  "d15N Habitat",
-                                  "d15N_depth_model_selection.xlsx"))
+gs_d15n_d_outlier
 
 # ---- create specific stuff for model saving -----
-car::Anova(m3)
-# summary(m3)
+drop1(m3, .~., test = "F")
+shapiro.test(residuals(m3))
 
-main_effects <- tidy(car::Anova(m3))
+par(mfrow = c(2, 2))
+plot(m3)
+par(mfrow = c(1, 1))
+
+car::Anova(m3, type = "III")
+
+me_d15n_outlier <- tidy(car::Anova(m3, type = "III"))
+
+cooksD <- cooks.distance(m3)
+influential <- cooksD[(cooksD > (3 * mean(cooksD, na.rm = TRUE)))]
+influential
+# our large fish that is in at a higher trophic level is quite an outlier 
+# we will run the regression again without it and report both 
+
+# ---- create model without large fish for d15n vs depth -----
+
+glimpse(ati_s)
+
+m7 <- lm(n_15 ~ mean_depth * fish_basin, 
+         data = ati_s,
+         contrasts = list(fish_basin = contr.sum)
+)
+
+Anova(m7, type = 3)
+# we can see our single outlier pulls so much that it affects the signficance
+# model section 
+m8 <- update(m7, ~ mean_depth)
+m9 <- update(m7, ~ fish_basin)
+m10 <- update(m7, ~ mean_depth + fish_basin)
 
 
 
-ind_effects <- tidy(m3)
+model_list <- list(m7, m8, m9, m10)
+# give the elements useful names
+names(model_list) <- c("m7", 
+                       "m8", "m9", "m10")
+
+glance(m7)
+# get the summaries using `lapply
+
+summary_list <- lapply(model_list, function(x) tidy(x, parametric = TRUE))
+glance_list <- lapply(model_list, glance)
+# glance_list <- lapply(glance_list, function(x) mutate_at(x, 
+#                                                          .vars = "logLik", 
+#                                                          as.numeric))
 
 
-# main_effects %>% 
-main_effects %>% 
-  openxlsx::write.xlsx(here::here("results",
-                                  "d15N Habitat",
-                                  "d15N_depth_lmer_main_effect.xlsx"))
-ind_effects %>%
-  openxlsx::write.xlsx(here::here("results",
-                                  "d15N Habitat",
-                                  "d15N_depth_lmer_ind_effect.xlsx"))
-
-main_effects <- tidy(car::Anova(m4))
+glance_summary <- map_df(glance_list, ~as.data.frame(.x), .id = "id") %>% 
+  mutate(model = lapply(model_list, formula) %>%
+           as.character()
+  ) %>% 
+  dplyr::select(model, id:df.residual) %>% 
+  arrange(AIC)
 
 
+glance_summary
 
-ind_effects <- tidy(m4)
+gs_d15n_d <- glance_summary %>% 
+  mutate(
+    delta_AIC = AIC - first(AIC), 
+    AIC_weight = exp(-0.5 * delta_AIC) / sum(exp(-0.5 * delta_AIC))
+  ) %>% 
+  dplyr::select(model:AIC, delta_AIC, AIC_weight, BIC:df.residual)
+gs_d15n_d
+
+# ---- create specific stuff for model saving -----
+car::Anova(m7, type = "III")
+par(mfrow = c(2, 2))
+plot(m7)
+par(mfrow = c(1, 1))
+shapiro.test(residuals(m7))
+
+me_d15n_d <- tidy(car::Anova(m7, type = "III"))
 
 
-# main_effects %>% 
-main_effects %>% 
-  openxlsx::write.xlsx(here::here("results",
-                                  "d15N Habitat",
-                                  "d15N_depth_lmer_main_effect_no_basin.xlsx"))
-ind_effects %>%
-  openxlsx::write.xlsx(here::here("results",
-                                  "d15N Habitat",
-                                  "d15N_depth_lmer_ind_effect_no_basin.xlsx"))
+# ---- combine main effects and model fit together and save as an RDS ----
+# we will combine the rds for all three metrics later in another script 
+
+model_fit <- bind_rows(list(d13c = gs_d13c_d, 
+                            d15n = gs_d15n_d,
+                            d15n_outlier = gs_d15n_d_outlier), 
+                       .id = "id") %>% 
+  mutate(
+    metric = "depth"
+  ) %>% 
+  dplyr::select(id, metric, model, r.squared:df.residual)
+
+model_fit
+
+
+model_effects <- bind_rows(list(d13c = me_d13c_d, 
+                                d15n = me_d15n_d,
+                                d15n_outlier = me_d15n_outlier), 
+                           .id = "id") %>% 
+  mutate(
+    metric = "depth"
+  ) %>% 
+  dplyr::select(id, metric, term, p.value)
+
+model_fit
+
+model_effects
+
+write_rds(model_fit, here("Results", 
+                          "depth_isotope_model_fit.rds"))
+write_rds(model_effects, here("Results", 
+                              "depth_isotope_model_effects.rds"))
+
+# ---- plot mean temp across months for d13C -----
+descdist(ati$mean_depth)
+
+
+m7 <- glm(mean_depth ~ c_13 * n_15,
+          data = ati,
+          family = Gamma(link = "log")
+)
+
+Anova(m7, type = 3)
+
+res <- simulateResiduals(m7)
+
+plot(res)
+shapiro.test(residuals.glm(m7))
+summary(ati$n_15)
+
+nd <- expand_grid(
+  c_13 = seq(-25.5, -31.5, length.out = 100),
+  n_15 = seq(8.5, 15, length.out = 100),
+  mean_depth = seq(0, 20, length.out = 100)
+)
+#
+fits <- predict(m7, newdata = nd, type = "response")
+
+preds <- bind_cols(nd, fits) %>%
+  rename(
+    fit = ...4
+  )
+
+preds
+#
+#
+#
+#
+#
+#
+#
+ggplot() +
+  geom_raster(data = preds, aes(x = c_13,
+                                y = n_15, fill = fit), ) +
+  geom_point(data = ati, size = 4,
+             aes(y = n_15, x = c_13,
+                 fill = mean_depth),
+             shape = 21, stroke = 0.8
+  ) +
+  #   # stat_ellipse(aes(colour = fish_basin),
+  #   #              type = "norm", linetype = 1,
+  #   # linewidth = 1) +
+  #   # geom_errorbar(aes(xmin = mean_depth - sem,
+  #   #                   xmax = mean_depth + sem), width = 0.05) +
+  scale_fill_viridis_c(name = "Depth Use (m)",
+                       option = "D",alpha = 0.5 ,trans = "reverse", 
+                       direction = 1
+                       # breaks = seq(4.5, 7.5, 1),
+                       # limit = c(4, 8)
+  ) +
+  scale_x_continuous(breaks = rev(seq(-25, -31, -1))) + 
+  scale_y_continuous(breaks = seq(8, 15, 1)) + 
+  # scale_colour_viridis_c(
+  #   # begin = 0.25, end = 0.85,
+  #   option = "D",
+  #   trans = "reverse", 
+  #   direction = 1,
+  #   name = "Observed\nDepth Use (m)",
+  # ) +
+  # scale_y_continuous(breaks = rev(seq(-26, -31, -1))) +
+  
+
+  # facet_wrap(.~ fish_basin) +
+  coord_cartesian(expand = FALSE) +
+  theme_bw(base_size = 15) +
+  theme(
+    legend.title = element_text(hjust = 0.5),
+    panel.grid = element_blank(),
+    # legend.position = c(0.85, 0.9)
+  ) +
+  labs(
+    x = expression(paste(delta ^ 13, "C")),
+    y = expression(paste(delta ^ 15, "N"))) -> p3
+
+
+p3
+ggsave(filename = here("Plots",
+                       "depth use and isotopes",
+                       "mean_depth_month_d13c_raster_pred.png"), plot = p3,
+       width = 11, height = 8.5)
+
+write_rds(p3, here("Saved Plots",
+                  "d13c_d15n_depth_predicted.rds"))
 
