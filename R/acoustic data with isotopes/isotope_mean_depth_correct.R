@@ -77,7 +77,8 @@ at_depth_sum <- at_depth %>%
     mean_depth = mean(md), 
     sd = sd(md), 
     var_depth = var(md), 
-    sem = sd(md) / sqrt(n())
+    sem = sd(md) / sqrt(n()), 
+    range = max(md) - min(md)
   ) %>% 
   ungroup()
 # print(n = 100, at_depth)
@@ -87,28 +88,30 @@ ati <- at_depth_sum %>%
   left_join(df_short, by = c("floy_tag" = "sample")) 
 
 
+ati_s <- ati %>%
+  filter(floy_tag != "07478")
 # ---- plot mean depth across months for d13C -----
-ggplot(data = ati, aes(x = c_13, y = mean_depth)) + 
+ggplot(data = ati, aes(y = c_13, x = mean_depth)) + 
   geom_point(size = 4, aes(fill = fish_basin), 
              shape = 21, stroke = 0.8) + 
   # stat_ellipse(aes(colour = fish_basin), 
   #              type = "norm", linetype = 1,
   # linewidth = 1) +
-  geom_hline(yintercept = 0, linetype = 2, linewidth = 1) +  
-  geom_errorbar(aes(ymin = mean_depth - sem, 
-                    ymax = mean_depth + sem), width = 0.05) +
+  geom_vline(xintercept = 0, linetype = 2, linewidth = 1) +  
+  # geom_errorbar(aes(xmin = mean_depth - sem, 
+  #                   xmax = mean_depth + sem), width = 0.05) +
   scale_fill_viridis_d(begin = 0.25, end = 0.85, 
                        option = "D", 
                        name = "Basin") + 
-  scale_x_continuous(breaks = rev(seq(-26, -31, -1))) + 
-  scale_y_reverse() + 
+  scale_y_continuous(breaks = rev(seq(-26, -31, -1))) + 
+  # scale_x_reverse() + 
   theme_bw(base_size = 15) + 
   theme(
     panel.grid = element_blank(), 
     legend.position = c(0.85, 0.9)
   ) + 
-  labs(x = expression(paste(delta ^ 13, "C")), 
-       y = "Mean Monthly Depth Use (m)") -> p 
+  labs(y = expression(paste(delta ^ 13, "C")), 
+       x = "Mean Monthly Depth Use (m)") -> p 
 
 
 p
@@ -119,31 +122,31 @@ ggsave(filename = here("Plots",
 
 
 write_rds(p, here("Saved Plots",
-                   "c_13_depth_overall.rds"))
+                  "c_13_depth_overall.rds"))
 
 
 # ---- plot mean depth across months for d13C -----
-ggplot(data = ati, aes(x = n_15, y = mean_depth)) + 
+ggplot(data = ati, aes(y = n_15, x = mean_depth)) + 
   geom_point(size = 4, aes(fill = fish_basin), 
              shape = 21, stroke = 0.8) + 
   # stat_ellipse(aes(colour = fish_basin), 
   #              type = "norm", linetype = 1,
   # linewidth = 1) +
-  geom_hline(yintercept = 0, linetype = 2, linewidth = 1) +  
-  geom_errorbar(aes(ymin = mean_depth - sem, 
-                    ymax = mean_depth + sem), width = 0.05) +
+  geom_vline(xintercept = 0, linetype = 2, linewidth = 1) +  
+  # geom_errorbar(aes(xmin = mean_depth - sem, 
+  #                   xmax = mean_depth + sem), width = 0.05) +
   scale_fill_viridis_d(begin = 0.25, end = 0.85, 
                        option = "D", 
                        name = "Basin") + 
-  scale_x_continuous(breaks = seq(9, 15, 1)) + 
-  scale_y_reverse() + 
+  scale_y_continuous(breaks = seq(9, 15, 1)) + 
+  # scale_y_reverse() + 
   theme_bw(base_size = 15) + 
   theme(
     panel.grid = element_blank(), 
     legend.position = c(0.85, 0.9)
   ) + 
-  labs(x = expression(paste(delta ^ 15, "N")), 
-       y = "Mean Monthly Depth Use (m)") -> p1 
+  labs(y = expression(paste(delta ^ 15, "N")), 
+       x = "Mean Monthly Depth Use (m)") -> p1 
 
 
 p1
