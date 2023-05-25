@@ -8,11 +8,15 @@ library(fitdistrplus)
 library(ggplot2)
 library(glmmTMB)
 library(GLMMadaptive)
+library(gratia)
 library(here)
-library(purrr)
 library(lme4)
+library(mgcv)
+library(purrr)
 library(readr)
+library(rstanarm)
 library(sf)
+library(tidyr)
 
 
 # ---- bring in dataframe ------
