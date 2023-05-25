@@ -156,17 +156,19 @@ df_movment_overall <- df_movment_overall %>%
   filter(mean_dis != is.na(mean_dis) & 
            c_13 != is.na(c_13))
 
+dis_mean_overall_s <- dis_mean_overall %>%
+  filter(floy_tag != "07478")
 ## $\delta^{15}$N *versus* Movement ± sem with colour as basin for isothermal and stratification
 
 # ---- Plots ----
 
 ggplot(data = df_movment_overall, 
-       aes(x = n_15, y = mean_dis)) + 
+       aes(x = mean_dis, y = n_15)) + 
   geom_point(size = 4, aes(fill = basin), 
              colour = "black", 
              shape = 21, stroke = 0.8) +
-  geom_errorbar(aes(ymin = mean_dis - sem_dis, 
-                    ymax = mean_dis + sem_dis), width = 0.05) +
+  # geom_errorbar(aes(xmin = mean_dis - sem_dis, 
+  #                   xmax = mean_dis + sem_dis), width = 0.05) +
   # scale_shape_manual(values = c(21:23), 
   #                    name = "Basin") + 
   scale_fill_viridis_d(begin = 0.25, end = 0.85, 
@@ -174,7 +176,7 @@ ggplot(data = df_movment_overall,
                        name = "Basin",
                        alpha = 0.75
   ) +
-  scale_x_continuous(breaks = seq(9, 15, 1)) + 
+  scale_y_continuous(breaks = seq(9, 15, 1)) +
   # facet_wrap(. ~ therm) + 
   theme_bw(base_size = 15) +
   theme(axis.text = element_text(colour = "black"),
@@ -183,9 +185,9 @@ ggplot(data = df_movment_overall,
         # legend.title.align = 0.5,
         legend.box = "horizontal",
         legend.background = element_blank()) + 
-  labs(x = expression(paste(delta ^ 15, "N")), 
-       y = expression(paste("Mean Monthly Movement (", sqrt("km", "" ^ 3),")"))
-       ) -> p1
+  labs(y = expression(paste(delta ^ 15, "N")), 
+       x = expression(paste("Mean Monthly Movement (", sqrt("km", "" ^ 3),")"))
+  ) -> p1
 p1
 ggsave(filename = here("Plots",
                        "movement and isotopes",
@@ -199,18 +201,18 @@ write_rds(p1, here("Saved Plots",
 
 
 ggplot(data = df_movment_overall, 
-       aes(x = c_13, y = mean_dis)) + 
+       aes(y = c_13, x = mean_dis)) + 
   geom_point(size = 4, aes(fill = basin), 
              colour = "black", 
              shape = 21, stroke = 0.8) +
-  geom_errorbar(aes(ymin = mean_dis - sem_dis, 
-                    ymax = mean_dis + sem_dis), width = 0.05) +
+  # geom_errorbar(aes(xmin = mean_dis - sem_dis, 
+  #                   xmax = mean_dis + sem_dis), width = 0.05) +
   scale_fill_viridis_d(begin = 0.25, end = 0.85, 
                        option = "D", 
                        name = "Basin",
                        alpha = 0.75
   ) +
-  scale_x_continuous(breaks = rev(seq(-23, -31, -1))) + 
+  scale_y_continuous(breaks = rev(seq(-23, -31, -1))) + 
   # scale_y_continuous(breaks = seq(0, 10, 2), 
   #                    limits = c(0, 9)) +
   theme_bw(base_size = 15) +
@@ -225,16 +227,17 @@ ggplot(data = df_movment_overall,
   #                arrow = arrow(length = unit(0.5, "cm"))) +
   # geom_segment(aes(x = -29, y = 8.65, xend = -32, yend = 8.65),
   #                arrow = arrow(length = unit(0.5, "cm"))) +
-  #   
+#   
 theme(axis.text = element_text(colour = "black"),
       panel.grid = element_blank(), 
       legend.position = c(0.92, 0.85), 
       # legend.title.align = 0.5,
       legend.box = "horizontal",
       legend.background = element_blank()) + 
-  labs(x = expression(paste(delta ^ 13, "C")), 
-       y = expression(paste("Mean Monthly Movement (", sqrt("km", "" ^ 3), 
+  labs(y = expression(paste(delta ^ 13, "C")), 
+       x = expression(paste("Mean Monthly Movement (", sqrt("km", "" ^ 3), 
                             ")"))) -> p2
+
 p2
 
 ggsave(filename = here("Plots",
@@ -259,7 +262,7 @@ ggplot(data = df_movment_overall,
                        option = "D",
                        alpha = 0.75, 
                        name = expression(paste("Movement (", sqrt("km", "" ^ 3), 
-                            ")"))) +
+                                               ")"))) +
   # scale_y_continuous(breaks = seq(0, 8, 2), 
   #                    limits = c(0, 8.5)) +
   theme_bw(base_size = 15) +
