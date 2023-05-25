@@ -393,7 +393,7 @@ m3 <- gam(n_15 ~ mean_dis * basin,
 appraise(m3)
 summary(m3)$sp.criterion
 m3_aov <- anova.gam(m3)
-me_d15n<- m3_aov$pTerms.table %>% 
+me_d15n <- m3_aov$pTerms.table %>% 
   as_tibble(rownames = "terms") %>% 
   janitor::clean_names()
 me_d15n
@@ -448,9 +448,27 @@ model_fit <- bind_rows(list(d13c = gs_d13c,
   mutate(
     metric = "dis"
   ) %>% 
-  dplyr::select(id, metric, model, df:df.residual)
+  dplyr::select(id, metric, model, family, link, r.squared:df.residual)
 
 model_fit
+
+me_d15n <- me_d15n %>% 
+  mutate(
+    sumsq = NA, 
+    statistic = NA, 
+  ) %>% 
+  dplyr::select(terms, sumsq, df, statistic, chi_sq, p_value) 
+
+me_d13c <- me_d13c %>% 
+  mutate(
+    chi_sq = NA
+  ) %>% 
+  rename(
+    terms = term,
+    p_value = p.value
+  ) %>% 
+  dplyr::select(terms:statistic, chi_sq, p_value)
+
 
 model_effects <- bind_rows(list(d13c = me_d13c,
                                 d15n = me_d15n), 
@@ -468,6 +486,7 @@ write_rds(model_fit, here("Results",
                           "distance_isotope_model_fit.rds"))
 write_rds(model_effects, here("Results", 
                               "distance_isotope_model_effects.rds"))
+
 
 # ---- plot mean distance across months for d13c vs d15n -----
 descdist(df_movment_overall$mean_dis)
