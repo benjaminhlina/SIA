@@ -145,7 +145,7 @@ ggplot(data = dis_mean_overall, aes(x = mean_dis)) +
     x = expression(paste("Average Monthly Movement (", sqrt("km", "" ^ 3),")")),
     y = "Frequency")
 
-# --- join this data to stable isotope data -----
+# ---- join this data to stable isotope data -----
 
 
 df_movment_overall <- df %>% 
