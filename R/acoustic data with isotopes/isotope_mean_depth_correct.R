@@ -158,7 +158,7 @@ ggsave(filename = here("Plots",
 
 
 write_rds(p1, here("Saved Plots",
-                  "n_15_depth_overall.rds"))
+                   "n_15_depth_overall.rds"))
 
 
 # ---- look at distributions ----
@@ -166,12 +166,8 @@ ati <- ati %>%
   filter(c_13 != is.na(c_13))
 
 glimpse(ati)
-descdist(ati$mean_depth)
 descdist(ati$c_13)
 descdist(ati$n_15)
-
-ggplot(data = ati, aes(x = mean_depth)) +
-  geom_histogram()
 
 ggplot(data = ati, aes(x = c_13)) +
   geom_histogram()
@@ -183,50 +179,22 @@ ggplot(data = ati, aes(x = n_15)) +
 glimpse(ati)
 
 # ---- create model for c_13 ~ mean_depth -----
-# m <- mixed_model(fixed = dis_mean_o ~ c_13 + basin, 
-#                  random = ~ c_13 | sample, 
-#                  data = df_movment_heard_o,
-#                   family =)
-m <- glmmTMB(c_13 ~ mean_depth * fish_basin + (1|floy_tag),
-             family = gaussian(link = "identity"),
-             data = ati,
-             REML = TRUE)
-# model fit evalauteion 
-res <- simulateResiduals(m)
 
-plot(res)
+m <- lm(c_13 ~ mean_depth * fish_basin,
+        data = ati, 
+        contrasts = list(fish_basin = "contr.sum"))
 
-Anova(mod = m)
 # model section 
-m1 <- update(m, ~ mean_depth + (1|floy_tag), 
-             # control = glmmTMBControl(optimizer=optim,
-             #                          optArgs = list(method = "BFGS")
-                                      )
-)
-m2 <- update(m, ~ mean_depth)
-
-# m1 <- glmmTMB(mean_depth ~ c_13 * basin + (1|sample),
-#               data = ati,
-#               family = Gamma(link = "log"),
-#               REML = TRUE)
-# 
-# res1 <- simulateResiduals(m1)
-# 
-# plot(res1)
-# Anova(m1)
-# 
-# 
-# res2 <- simulateResiduals(m2)
-
-# make list of only the models you hav! 
-
+m1 <- update(m, ~ mean_depth)
+m2 <- update(m, ~ fish_basin)
+m3 <- update(m, ~ mean_depth + fish_basin)
 
 
 # ---- create model list for model selection ------
-model_list <- list(m, m1, m2)
+model_list <- list(m, m1, m2, m3)
 # give the elements useful names
 names(model_list) <- c("m", 
-                       "m1", "m2")
+                       "m1", "m2", "m3")
 
 glance(m)
 # get the summaries using `lapply
@@ -244,65 +212,47 @@ glance_summary <- map_df(glance_list, ~as.data.frame(.x), .id = "id") %>%
 
 glance_summary
 
-glance_summary <- glance_summary %>% 
+gs_d13c_d <- glance_summary %>% 
   mutate(
     delta_AIC = AIC - first(AIC), 
     AIC_weight = exp(-0.5 * delta_AIC) / sum(exp(-0.5 * delta_AIC))
   ) %>% 
   dplyr::select(model:AIC, delta_AIC, AIC_weight, BIC:df.residual)
-glance_summary
 
-glance_summary %>%
-  openxlsx::write.xlsx(here::here("results",
-                                  "d13C Habitat",
-                                  "d13C_depth_model_selection.xlsx"))
+gs_d13c_d
+
 
 # ---- create specific stuff for model saving -----
-car::Anova(m)
-summary(m)
 
-main_effects <- tidy(car::Anova(m))
+drop1(m, .~., test = "F")
+shapiro.test(residuals(m))
+
+par(mfrow = c(2, 2))
+plot(m)
+par(mfrow = c(1, 1))
+cooksD <- cooks.distance(m)
+influential <- cooksD[(cooksD > (3 * mean(cooksD, na.rm = TRUE)))]
+influential
+# a few outliers but their affect is pretty maginal 
+car::Anova(m, type = "III")
 
 
-
-ind_effects <- tidy(m)
-
-
-# main_effects %>% 
-main_effects %>% 
-  openxlsx::write.xlsx(here::here("results",
-                                  "d13C Habitat",
-                                  "d13C_depth_lmer_main_effect.xlsx"))
-ind_effects %>%
-  openxlsx::write.xlsx(here::here("results",
-                                  "d13C Habitat",
-                                  "d13C_depth_lmer_ind_effect.xlsx"))
+me_d13c_d <- tidy(car::Anova(m))
 
 # ---- Nitrogen vs movement -----
 
-m3 <- glmmTMB(n_15 ~ mean_depth * fish_basin + (1|floy_tag),
-              data = ati,
-              family = Gamma(link = "log"),
-              # control = glmmTMBControl(optimizer=optim,
-              #                          optArgs = list(method = "BFGS")),
-              REML = TRUE)
-
-# model fit evaluation 
-res3 <- simulateResiduals(m3)
-plot(res3)
-Anova(m3)
+m3 <- lm(n_15 ~ mean_depth * fish_basin,
+         data = ati)
 # model section 
-m4 <- update(m3, ~ mean_depth + (1|floy_tag), 
-             # control = glmmTMBControl(optimizer=optim,
-             #                          optArgs = list(method = "BFGS"))
-             )
-m5 <- update(m3, ~ mean_depth)
+m4 <- update(m3, ~ mean_depth)
+m5 <- update(m3, ~ fish_basin)
+m6 <- update(m3, ~ mean_depth + fish_basin)
 
 
-model_list <- list(m3, m4, m5)
+model_list <- list(m3, m4, m5, m6)
 # give the elements useful names
 names(model_list) <- c("m3", 
-                       "m4", "m5")
+                       "m4", "m5", "m6")
 
 glance(m3)
 # get the summaries using `lapply
