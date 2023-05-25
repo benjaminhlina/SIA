@@ -375,16 +375,6 @@ gs_d15n_d <- glance_summary %>%
   dplyr::select(model:AIC, delta_AIC, AIC_weight, BIC:df.residual)
 gs_d15n_d
 
-# ---- create specific stuff for model saving -----
-car::Anova(m7, type = "III")
-par(mfrow = c(2, 2))
-plot(m7)
-par(mfrow = c(1, 1))
-shapiro.test(residuals(m7))
-
-me_d15n_d <- tidy(car::Anova(m7, type = "III"))
-
-
 # ---- combine main effects and model fit together and save as an RDS ----
 # we will combine the rds for all three metrics later in another script 
 
@@ -422,7 +412,7 @@ write_rds(model_effects, here("Results",
 descdist(ati$mean_depth)
 
 
-m7 <- glm(mean_depth ~ c_13 * n_15,
+m11 <- glm(mean_depth ~ c_13 * n_15,
           data = ati,
           family = Gamma(link = "log")
 )
@@ -435,77 +425,79 @@ plot(res)
 shapiro.test(residuals.glm(m7))
 summary(ati$n_15)
 
-nd <- expand_grid(
-  c_13 = seq(-25.5, -31.5, length.out = 100),
-  n_15 = seq(8.5, 15, length.out = 100),
-  mean_depth = seq(0, 20, length.out = 100)
-)
-#
-fits <- predict(m7, newdata = nd, type = "response")
+# Can't predict as the data is not signgicant to predict 
 
-preds <- bind_cols(nd, fits) %>%
-  rename(
-    fit = ...4
-  )
-
-preds
-#
-#
-#
-#
-#
-#
-#
-ggplot() +
-  geom_raster(data = preds, aes(x = c_13,
-                                y = n_15, fill = fit), ) +
-  geom_point(data = ati, size = 4,
-             aes(y = n_15, x = c_13,
-                 fill = mean_depth),
-             shape = 21, stroke = 0.8
-  ) +
-  #   # stat_ellipse(aes(colour = fish_basin),
-  #   #              type = "norm", linetype = 1,
-  #   # linewidth = 1) +
-  #   # geom_errorbar(aes(xmin = mean_depth - sem,
-  #   #                   xmax = mean_depth + sem), width = 0.05) +
-  scale_fill_viridis_c(name = "Depth Use (m)",
-                       option = "D",alpha = 0.5 ,trans = "reverse", 
-                       direction = 1
-                       # breaks = seq(4.5, 7.5, 1),
-                       # limit = c(4, 8)
-  ) +
-  scale_x_continuous(breaks = rev(seq(-25, -31, -1))) + 
-  scale_y_continuous(breaks = seq(8, 15, 1)) + 
-  # scale_colour_viridis_c(
-  #   # begin = 0.25, end = 0.85,
-  #   option = "D",
-  #   trans = "reverse", 
-  #   direction = 1,
-  #   name = "Observed\nDepth Use (m)",
-  # ) +
-  # scale_y_continuous(breaks = rev(seq(-26, -31, -1))) +
-  
-
-  # facet_wrap(.~ fish_basin) +
-  coord_cartesian(expand = FALSE) +
-  theme_bw(base_size = 15) +
-  theme(
-    legend.title = element_text(hjust = 0.5),
-    panel.grid = element_blank(),
-    # legend.position = c(0.85, 0.9)
-  ) +
-  labs(
-    x = expression(paste(delta ^ 13, "C")),
-    y = expression(paste(delta ^ 15, "N"))) -> p3
-
-
-p3
-ggsave(filename = here("Plots",
-                       "depth use and isotopes",
-                       "mean_depth_month_d13c_raster_pred.png"), plot = p3,
-       width = 11, height = 8.5)
-
-write_rds(p3, here("Saved Plots",
-                  "d13c_d15n_depth_predicted.rds"))
-
+# nd <- expand_grid(
+#   c_13 = seq(-25.5, -31.5, length.out = 100),
+#   n_15 = seq(8.5, 15, length.out = 100),
+#   mean_depth = seq(0, 20, length.out = 100)
+# )
+# #
+# fits <- predict(m7, newdata = nd, type = "response")
+# 
+# preds <- bind_cols(nd, fits) %>%
+#   rename(
+#     fit = ...4
+#   )
+# 
+# preds
+# #
+# #
+# #
+# #
+# #
+# #
+# #
+# ggplot() +
+#   geom_raster(data = preds, aes(x = c_13,
+#                                 y = n_15, fill = fit), ) +
+#   geom_point(data = ati, size = 4,
+#              aes(y = n_15, x = c_13,
+#                  fill = mean_depth),
+#              shape = 21, stroke = 0.8
+#   ) +
+#   #   # stat_ellipse(aes(colour = fish_basin),
+#   #   #              type = "norm", linetype = 1,
+#   #   # linewidth = 1) +
+#   #   # geom_errorbar(aes(xmin = mean_depth - sem,
+#   #   #                   xmax = mean_depth + sem), width = 0.05) +
+#   scale_fill_viridis_c(name = "Depth Use (m)",
+#                        option = "D",alpha = 0.5 ,trans = "reverse", 
+#                        direction = 1
+#                        # breaks = seq(4.5, 7.5, 1),
+#                        # limit = c(4, 8)
+#   ) +
+#   scale_x_continuous(breaks = rev(seq(-25, -31, -1))) + 
+#   scale_y_continuous(breaks = seq(8, 15, 1)) + 
+#   # scale_colour_viridis_c(
+#   #   # begin = 0.25, end = 0.85,
+#   #   option = "D",
+#   #   trans = "reverse", 
+#   #   direction = 1,
+#   #   name = "Observed\nDepth Use (m)",
+#   # ) +
+#   # scale_y_continuous(breaks = rev(seq(-26, -31, -1))) +
+#   
+# 
+#   # facet_wrap(.~ fish_basin) +
+#   coord_cartesian(expand = FALSE) +
+#   theme_bw(base_size = 15) +
+#   theme(
+#     legend.title = element_text(hjust = 0.5),
+#     panel.grid = element_blank(),
+#     # legend.position = c(0.85, 0.9)
+#   ) +
+#   labs(
+#     x = expression(paste(delta ^ 13, "C")),
+#     y = expression(paste(delta ^ 15, "N"))) -> p3
+# 
+# 
+# p3
+# ggsave(filename = here("Plots",
+#                        "depth use and isotopes",
+#                        "mean_depth_month_d13c_raster_pred.png"), plot = p3,
+#        width = 11, height = 8.5)
+# 
+# write_rds(p3, here("Saved Plots",
+#                   "d13c_d15n_depth_predicted.rds"))
+# 
