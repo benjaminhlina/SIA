@@ -192,6 +192,20 @@ m <- lm(c_13 ~ mean_temp * fish_basin,
         contrasts = list(fish_basin = "contr.sum"),
         data = ati)
 drop1(m, .~., test = "F")
+shapiro.test(residuals(m))
+
+par(mfrow = c(2, 2))
+plot(m)
+par(mfrow = c(1, 1))
+
+Anova(mod = m, type = 3)
+
+
+
+me_d13c <- tidy(car::Anova(m,  type = 3))
+me_d13c
+
+
 # model section 
 m1 <- update(m, ~ mean_temp) 
 m2 <- update(m, ~ fish_basin) 
@@ -229,19 +243,6 @@ gs_d13c
 
 # ---- create specific stuff for model saving -----
 
-drop1(m, .~., test = "F")
-shapiro.test(residuals(m))
-
-par(mfrow = c(2, 2))
-plot(m)
-par(mfrow = c(1, 1))
-
-Anova(mod = m, type = 3)
-
-
-
-me_d13c <- tidy(car::Anova(m,  type = 3))
-me_d13c
 
 # ---- Nitrogen vs movement with large fish  -----
 glimpse(ati)
@@ -251,7 +252,22 @@ m3 <- lm(n_15 ~ mean_temp * fish_basin,
          data = ati,
          contrasts = list(fish_basin = contr.sum))
 
-Anova(m3, type = 3)
+# ---- create specific stuff for model saving -----
+car::Anova(m3, type = "III")
+
+par(mfrow = c(2, 2))
+plot(m3)
+par(mfrow = c(1, 1))
+shapiro.test(residuals(m3))
+
+me_d15n_outlier <- tidy(car::Anova(m3, type = "III"))
+cooksD <- cooks.distance(m3)
+influential <- cooksD[(cooksD > (3 * mean(cooksD, na.rm = TRUE)))]
+influential
+
+# the one fish that we tagged that is at a higher trophic level really pulls 
+# the results to accomedate this we will regress a second time without it 
+
 
 # model section 
 m4 <- update(m3, ~ mean_temp)
@@ -290,21 +306,6 @@ gs_d15n_outlier <- glance_summary %>%
 gs_d15n
 
 
-# ---- create specific stuff for model saving -----
-car::Anova(m3, type = "III")
-
-par(mfrow = c(2, 2))
-plot(m3)
-par(mfrow = c(1, 1))
-shapiro.test(residuals(m3))
-
-me_d15n_outlier <- tidy(car::Anova(m3, type = "III"))
-cooksD <- cooks.distance(m3)
-influential <- cooksD[(cooksD > (3 * mean(cooksD, na.rm = TRUE)))]
-influential
-
-# the one fish that we tagged that is at a higher trophic level really pulls 
-# the results to accomedate this we will regress a second time without it 
 
 # ---- Nitrogen vs movement without large fish  -----
 glimpse(ati_s)
@@ -314,8 +315,14 @@ m7 <- lm(n_15 ~ mean_temp * fish_basin,
          data = ati_s,
          contrasts = list(fish_basin = contr.sum),
 )
+# ---- create specific stuff for model saving -----
+car::Anova(m7, type = "III")
+par(mfrow = c(2, 2))
+plot(m7)
+par(mfrow = c(1, 1))
+shapiro.test(residuals(m7))
 
-Anova(m7, type = 3)
+me_d15n <- tidy(car::Anova(m7, type = "III"))
 
 # model section 
 m8 <- update(m7, ~ mean_temp)
@@ -357,14 +364,6 @@ gs_d15n <- glance_summary %>%
   dplyr::select(model:AIC, delta_AIC, AIC_weight, BIC:df.residual)
 gs_d15n
 
-# ---- create specific stuff for model saving -----
-car::Anova(m7, type = "III")
-par(mfrow = c(2, 2))
-plot(m7)
-par(mfrow = c(1, 1))
-shapiro.test(residuals(m7))
-
-me_d15n <- tidy(car::Anova(m7, type = "III"))
 
 
 # ---- combine main effects and model fit together and save as an RDS ----
