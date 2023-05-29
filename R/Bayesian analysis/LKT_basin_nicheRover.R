@@ -65,17 +65,14 @@ df_sigma_wide <- df_sigma %>%
 
 # mu 
 
-df_mu <- bind_rows(
-  fish_par$East$mu %>% 
-    as_tibble() %>% 
-    mutate(basin = factor("East")),
-  fish_par$West$mu %>% 
-    as_tibble() %>% 
-    mutate(basin = factor("West")),
-  fish_par$North$mu %>% 
-    as_tibble() %>% 
-    mutate(basin = factor("North"))
-) %>% 
+df_mu<- map(fish_par, pluck, 1) %>% 
+  imap(~ as_tibble(.x) %>% 
+         mutate( 
+           metric = "mu", 
+           basin = .y
+         )
+  ) %>%
+  bind_rows() %>% 
   mutate(
     basin = fct_relevel(basin, "East", "West", "North")
   ) %>% 
@@ -86,8 +83,8 @@ df_mu <- bind_rows(
   ungroup()
 
 
-glimpse(df_mu)
 
+glimpse(df_mu)
 
 # ---- density plots ggplot ----
 
