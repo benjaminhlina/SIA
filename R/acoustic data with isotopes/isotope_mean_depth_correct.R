@@ -261,6 +261,7 @@ plot(m3)
 par(mfrow = c(1, 1))
 
 car::Anova(m3, type = "III")
+summary(m3)
 
 me_d15n_outlier <- tidy(car::Anova(m3, type = "III"))
 
@@ -406,7 +407,7 @@ model_effects <- bind_rows(list(d13c = me_d13c_d,
   mutate(
     metric = "depth"
   ) %>% 
-  dplyr::select(id, metric, term, p.value)
+  dplyr::select(id, metric, term, sumsq:p.value)
 
 model_fit
 

@@ -320,7 +320,7 @@ glimpse(ati_s)
 
 m7 <- lm(n_15 ~ mean_temp * fish_basin, 
          data = ati_s,
-         contrasts = list(fish_basin = contr.sum),
+         contrasts = list(fish_basin = "contr.sum"),
 )
 # ---- create specific stuff for model saving -----
 car::Anova(m7, type = "III")
@@ -398,7 +398,7 @@ model_effects <- bind_rows(list(d13c = me_d13c,
   mutate(
     metric = "temp"
   ) %>% 
-  dplyr::select(id, metric, term, p.value)
+  dplyr::select(id, metric, term, sumsq:p.value)
 
 model_fit
 
