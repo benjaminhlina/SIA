@@ -55,21 +55,26 @@ dis_effect
 
 temp_effect <- temp_effect %>% 
   mutate(
-    df = NA, 
-    statistic = NA, 
     chi_sq = NA
   ) %>% 
   rename(
     terms = term, 
     p_value = p.value
   ) %>% 
-  select(id, metric, terms, df, statistic, chi_sq, p_value)
+  dplyr::select(id, metric, terms, df, statistic, chi_sq, p_value)
+
+
 
 depth_effect <- depth_effect %>% 
-  mutate(
-    df = NA, 
-    statistic = NA, 
-    chi_sq = NA
+  mutate( 
+    chi_sq = case_when(
+      id %in% "d15n_outlier" ~ statistic, 
+      TRUE ~ NA
+    ), 
+    statistic = case_when(
+      id %in% "d15n_outlier" ~ NA, 
+      TRUE ~ statistic
+    )
   ) %>% 
   rename(
     terms = term, 
