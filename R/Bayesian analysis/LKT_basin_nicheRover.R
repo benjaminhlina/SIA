@@ -256,7 +256,7 @@ ggplot() +
   scale_colour_viridis_d(begin = 0.25, end = 0.75, 
                          option = "D", name = "Basin", 
                          # alpha = 0.35
-                         ) + 
+  ) + 
   # scale_fill_viridis_d(begin = 0.25, end = 0.85, 
   #                      option = "D", name = "Basin") + 
   scale_x_continuous(breaks = rev(seq(-20, -40, -2))) +
@@ -322,10 +322,10 @@ ggplot() +
   geom_point(data = df, aes(x = c_13, y = n_15,
                             # colour = basin, 
                             fill = basin, 
-                            ),
-             shape = 21, colour = "black", 
-             stroke = 0.8,
-             size = 3, alpha = 0.70) +
+  ),
+  shape = 21, colour = "black", 
+  stroke = 0.8,
+  size = 3, alpha = 0.70) +
   # scale_colour_viridis_d(begin = 0.25, end = 0.75, 
   #                        option = "D", name = "Basin") + 
   scale_fill_viridis_d(begin = 0.25, end = 0.75,
@@ -470,7 +470,7 @@ over_cred_df <- over_cred %>%
                                                         "North"))
   )
   )
-
+over_cred_df
 # filter out just 95% 
 over_cred_df_95 <- over_cred_df %>% 
   filter(percentage == "95%")
@@ -500,7 +500,7 @@ p9 <- ggplot(data = over_stat_df_95, aes(x = mc_nr_perc)) +
                  "Niche Region Size: 95%"), 
        y = "Frequency")
 
-# p9
+p9
 
 ggsave(filename = here("Plots",
                        "nicheROVER plots",
@@ -540,7 +540,6 @@ ggsave(filename = here("Plots",
 fish_size <- sapply(fish_par, function(spec) {
   apply(spec$Sigma, 3, niche.size, alpha = .95)
 })
-
 # convert to a dataframe for plotting 
 fish_size_df <- fish_size %>% 
   as_tibble() %>% 
@@ -617,11 +616,11 @@ ggplot(data = fish_size_df) +
   ) + 
   geom_point(data = niche_size_mean, aes(x = basin, y = est), 
              # size = 2.5
-             ) +
+  ) +
   geom_errorbar(data = niche_size_mean, aes(x = basin, 
                                             ymin = est - se, 
                                             ymax = est + se), 
-             width = 0.03) +
+                width = 0.03) +
   scale_y_continuous(breaks = seq(10, 80, 10)) + 
   theme_bw(base_size = 15) + 
   theme(panel.grid = element_blank(), 
