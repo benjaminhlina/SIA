@@ -565,6 +565,8 @@ fish_size_df
 # calculate mean niche size and the standard deviation of the mean 
 
 niche_size_mean <- rbind(est = colMeans(fish_size),
+                         sd = apply(fish_size, 2, 
+                                    function(x) sd(x)),
                          se = apply(fish_size, 2, 
                                     function(x) sd(x) / sqrt(length(x)))) %>% 
   as_tibble(rownames = "metric") %>% 
@@ -579,7 +581,7 @@ niche_size_mean <- rbind(est = colMeans(fish_size),
   ) %>% 
   pivot_wider(id_cols = basin, names_from = metric, values_from = values)
 
-
+niche_size_mean
 # ---- plot niche size with mean and sd ----- 
 
 ggplot(data = fish_size_df) + 
@@ -589,11 +591,11 @@ ggplot(data = fish_size_df) +
   ) + 
   geom_point(data = niche_size_mean, aes(x = basin, y = est), 
              # size = 3
-             ) +
+  ) +
   geom_errorbar(data = niche_size_mean, aes(x = basin, 
                                             ymin = est - se, 
                                             ymax = est + se), 
-             width = 0.03) +
+                width = 0.03) +
   scale_y_continuous(breaks = seq(10, 80, 10)) + 
   theme_bw(base_size = 15) + 
   theme(panel.grid = element_blank(), 
