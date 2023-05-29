@@ -390,6 +390,8 @@ m3 <- gam(n_15 ~ mean_dis * basin,
           method = "REML"
 )
 
+m3$df.residual
+
 appraise(m3)
 summary(m3)$sp.criterion
 m3_aov <- anova.gam(m3)
@@ -509,7 +511,7 @@ shapiro.test(residuals.glm(m7))
 
 
 summary(df_movment_overall$mean_dis)
-# nothing is signgifcant so we can't predict -----
+# nothing is significant so we can't predict 
 
 # #
 # nd <- expand_grid(
@@ -578,3 +580,4 @@ summary(df_movment_overall$mean_dis)
 # 
 # write_rds(p3, here("Saved Plots",
 #                    "d13c_d15n_dis_predicted.rds"))
+\
