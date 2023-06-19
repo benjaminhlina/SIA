@@ -106,8 +106,26 @@ df_mu_long <- df_mu %>%
 
 df_sigma <- df_sigma %>%
   mutate(
-    
-    )
+    element_id = case_when(
+      id == "d15n" ~ "N",
+      id == "d13c" ~ "C",
+      id == "d34s" ~ "S",
+    ), 
+    neutron_id = case_when(
+      id == "d15n" ~ 15,
+      id == "d13c" ~ 13,
+      id == "d34s" ~ 34,
+    ),
+    element_iso = case_when(
+      isotopes == "d15n" ~ "N",
+      isotopes == "d13c" ~ "C",
+      isotopes == "d34s" ~ "S",
+    ), 
+    neutron_iso = case_when(
+      isotopes == "d15n" ~ 15,
+      isotopes == "d13c" ~ 13,
+      isotopes == "d34s" ~ 34,
+    ) 
   )
 
 # ---- density plots ggplot ----
@@ -138,7 +156,7 @@ df_sigma <- df_sigma %>%
 
 
 
-plots <- df_mu_long %>% 
+posterior_plots <- df_mu_long %>% 
   split(.$isotope) %>% 
   imap(
     ~ ggplot(data = ., aes(x = mu_est)) +
@@ -164,19 +182,21 @@ plots <- df_mu_long %>%
 
 
 
-p <- plots$d15n + 
+p <- posterior_plots$d15n + 
   theme(legend.position = c(0.10, 0.88)) 
 
-p1 <- plots$d13c
-p2 <- plots$d34s
+p1 <- posterior_plots$d13c
+p2 <- posterior_plots$d34s
 
 
 p3 <- p + p1 + p2 
 
 p3
 
+vignette(package = "nicheROVER", "ecol-vignette")
+glimpse(df_sigma)
 
-plots <- df_sigma %>% 
+sigma_plots <- df_sigma %>% 
   group_split(id, isotopes) %>% 
   imap(
     ~ ggplot(data = ., aes(x = post_sample)) +
@@ -184,16 +204,45 @@ plots <- df_sigma %>%
       scale_fill_viridis_d(begin = 0.25, end = 0.75, 
                            option = "D", name = "Species") +
       theme_bw(base_size = 15) + 
-      theme(panel.grid = element_blank()) +
-      labs( 
+      theme(panel.grid = element_blank(), 
+            axis.title.x =  element_markdown(),
+            axis.title.y =  element_markdown(), 
+            legend.position = "none"
+            ) +
+      labs(
+        x = paste("\U03A3","<sub>\U03B4</sub>",
+                  "<sub><sup>", unique(.$neutron_id), "</sub></sup>", 
+                  "<sub>",unique(.$element_id),"</sub>"," ",
+                  "<sub>\U03B4</sub>",
+                  "<sub><sup>", unique(.$neutron_iso), "</sub></sup>", 
+                  "<sub>",unique(.$element_iso),"</sub>", sep = ""), 
+        y = paste("p(", "\U03A3","<sub>\U03B4</sub>",
+                  "<sub><sup>", unique(.$neutron_id), "</sub></sup>", 
+                  "<sub>",unique(.$element_id),"</sub>"," ",
+                  "<sub>\U03B4</sub>",
+                  "<sub><sup>", unique(.$neutron_iso), "</sub></sup>", 
+                  "<sub>",unique(.$element_iso),"</sub>", " | X)", sep = ""), 
       )
   )
 
-plots[[1]] +
-  labs(
-    y = "Density",
-    x = expression(paste(Sigma[~delta^15],""[N])),
-  )
+
+length(sigma_plots)
+
+p4 <- sigma_plots[[9]] + 
+  theme(legend.position = c(0.88, 0.7)) 
+
+
+p5 <- sigma_plots[[1]] + 
+  sigma_plots[[2]] +
+  sigma_plots[[3]] +
+  sigma_plots[[4]] +
+  sigma_plots[[5]] +
+  sigma_plots[[6]] +
+  sigma_plots[[7]] +
+  sigma_plots[[8]] +
+  p4
+
+p5
 # ---- niche.plot ------
 # 
 # clrs <- c("black", "blue", "orange")
