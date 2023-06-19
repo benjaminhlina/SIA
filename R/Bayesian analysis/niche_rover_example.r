@@ -109,26 +109,7 @@ df_sigma <- df_sigma %>%
     
     )
   )
-# df_mu_long <- df_mu_long %>% 
-#   mutate(
-#     isotope_label = factor(
-#       isotope, 
-#       levels = c("d15n", "d13c", "d34s"),
-#       labels = c(
-#         expression(paste(mu[~delta^15],""[N])),
-#         expression(paste(mu[~delta^13],""[C])),
-#         expression(paste(mu[~delta^34],""[S]))
-#       )),
-#     y_label = factor(
-#       isotope, 
-#       levels = c("d15n", "d13c", "d34s"),
-#       labels = c(
-#         expression(paste("p(", mu[~delta^15],""[N], " ", "| X)")),
-#         expression(paste("p(", mu[~delta^13],""[C], " ", "| X)")),
-#         expression(paste("p(", mu[~delta^34],""[S], " ", "| X)"))
-#       )
-#     )
-#   )
+
 # ---- density plots ggplot ----
 
 
