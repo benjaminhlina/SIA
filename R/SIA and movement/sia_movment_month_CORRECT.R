@@ -343,7 +343,7 @@ me_d13c
 m1 <- update(m, ~ mean_dis)
 m2 <- update(m, ~ basin)
 m3 <- update(m, ~ mean_dis + basin)
-
+Anova(m1, type = 3)
 # ---- create model list for model selection ------
 model_list <- list(m, m1, m2)
 # give the elements useful names
@@ -384,34 +384,37 @@ gs_d13c
 
 
 
-m3 <- gam(n_15 ~ mean_dis * basin,
+m4 <- gam(n_15 ~ mean_dis * basin,
           data = df_movment_overall, 
           family = scat(link = "identity"), 
           method = "REML"
 )
 
-m3$df.residual
 
-appraise(m3)
-summary(m3)$sp.criterion
-m3_aov <- anova.gam(m3)
+
+m4$df.residual
+
+appraise(m4)
+summary(m4)$sp.criterion
+m3_aov <- anova.gam(m4, freq = FALSE)
 me_d15n <- m3_aov$pTerms.table %>% 
   as_tibble(rownames = "terms") %>% 
   janitor::clean_names()
 me_d15n
 
+anova.gam(m5)
 # gam.check(m3)
 
 # model section 
-m4 <- update(m3, ~ mean_dis)
-m5 <- update(m3, ~ basin)
-m6 <- update(m3, ~ mean_dis + basin)
+m5 <- update(m4, ~ mean_dis)
+m6 <- update(m4, ~ basin)
+m7 <- update(m4, ~ mean_dis + basin)
 
 
-model_list <- list(m3, m4, m5)
+model_list <- list(m4, m5, m6, m7)
 # give the elements useful names
-names(model_list) <- c("m3", 
-                       "m4", "m5")
+names(model_list) <- c("m4", 
+                       "m5", "m6", "m7")
 
 glance(m)
 # get the summaries using `lapply
