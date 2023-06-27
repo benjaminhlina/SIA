@@ -12,15 +12,23 @@ library(tidyr)
 
 # ---- bring in data ----
 
+# sigma
+# nick[data.table(resolution = 1:4, res_name = ), on = resolution]
 
 df <- read_rds(here("Saved Data", 
                     "cleaned_lkt_tagged_sia.rds"))
 
 glimpse(df)
 
+
+df %>% 
+  filter(wt_g > 3000)
+
 # ---- calculated the isotopic means for each basin -----
 
 aggregate(df[4:5], df[11], mean, na.rm = TRUE)
+
+
 
 
 # remove the samples that didn't run 
@@ -34,9 +42,11 @@ fish_par <- tapply(1:nrow(df), df$basin,
                    function(ii) niw.post(nsamples = nsample, 
                                          X = df[ii, 4:5]))
 str(fish_par)
+
+View(fish_par)
 # ---- separate niw.post object into sigma and mu tibbles ----- 
 # sigma
-
+# nick[data.table(resolution = 1:4, res_name = ), on = resolution]
 df_sigma <- map(fish_par, pluck, 2) %>% 
   imap(~ as_tibble(.x) %>% 
          mutate( 
@@ -266,7 +276,9 @@ ggplot() +
         panel.grid = element_blank(), 
         legend.position = "none", 
         legend.title.align = 0.5,
-        legend.background = element_blank()) + 
+        legend.background = element_blank(),
+        plot.tag.position  = c(0.95, 0.95)
+        ) + 
   labs(x = expression(paste(delta ^ 13, "C")), 
        y = expression(paste(delta ^ 15, "N"))) -> p4 
 # p4
@@ -289,7 +301,9 @@ ggplot() +
         panel.grid = element_blank(), 
         legend.position = "none", 
         legend.title.align = 0.5,
-        legend.background = element_blank()) + 
+        legend.background = element_blank(),
+        plot.tag.position  = c(0.95, 0.95)
+        ) + 
   labs(x = expression(paste(delta ^ 15, "N")), 
        y = "Density") -> p5
 # p5  
@@ -312,7 +326,9 @@ ggplot() +
         panel.grid = element_blank(), 
         legend.position = c(0.1, 0.84), 
         legend.title.align = 0.5,
-        legend.background = element_blank()) + 
+        legend.background = element_blank(),
+        plot.tag.position  = c(0.95, 0.95)
+        ) + 
   labs(x = expression(paste(delta ^ 13, "C")), 
        y = "Density") -> p6
 
@@ -337,13 +353,17 @@ ggplot() +
         panel.grid = element_blank(), 
         legend.position = "none", 
         legend.title.align = 0.5,
-        legend.background = element_blank()) + 
+        legend.background = element_blank(), 
+        plot.tag.position  = c(0.95, 0.95)
+        ) + 
   labs(x = expression(paste(delta ^ 13, "C")), 
        y = expression(paste(delta ^ 15, "N"))) -> p7
 
 # p7
 
-p8 <- p5 + p4 + p7 + p6
+p8 <- p5 + p4 + p7 + p6 + 
+  plot_annotation(tag_levels = "a") 
+  
 
 p8
 
@@ -523,14 +543,16 @@ p10 <- ggplot(data = over_stat_df_95, aes(x = mc_nr_perc)) +
   theme(
     panel.grid = element_blank(), 
     axis.text = element_text(colour = "black"), 
-    legend.position = c(0.76, 0.24)
+    legend.position = c(0.76, 0.24), 
+    # strip.background = element_rect(fill = NA)
+    strip.background = element_blank()
   ) + 
   
   labs(x = paste("Overlap Probability (%)", "\u2013", 
                  "Niche Region Size: 95%"), 
-       y = "Frequency")
+       y = "p(Percent Overlap | X)")
 
-# p10
+p10
 
 ggsave(filename = here("Plots",
                        "nicheROVER plots", 
