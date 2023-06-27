@@ -21,32 +21,42 @@ p5 <- read_rds(here("Saved Plots",
 # ---- remove lengends -----
 p <- p + 
   theme(
-    legend.position = "none"
+    legend.position = "none", 
+    plot.tag.position  = c(0.20, 0.96)
   )
 p1 <- p1 + 
   theme(
-    legend.position = "none"
+    legend.position = "none",
+    plot.tag.position  = c(0.20, 0.96)
   )
 p2 <- p2 + 
   theme(
-    legend.position = "none"
+    legend.position = "none",
+    plot.tag.position  = c(0.21, 0.96)
   )
 p3 <- p3 + 
   theme(
-    legend.position = "none"
+    legend.position = "none",
+    plot.tag.position  = c(0.21, 0.96)
   )
 p4 <- p4 + 
   theme(
-    legend.position = "none"
+    legend.position = "none",
+    plot.tag.position  = c(0.20, 0.96)
   )
 p5 <- p5 + 
   theme(
     # legend.position = "none"
     # legend.position = c(0.85, 0.21)
-    legend.position = c(0.19, 0.81)
+    legend.position = c(0.15, 0.75), 
+    plot.tag.position  = c(0.20, 0.96),
+    legend.background = element_blank()
+    
     )
 # ---- combine all plots ----- 
-p6 <- p + p2 + p4 + p1 + p3 + p5
+p6 <- p + p2 + p4 + p1 + p3 + p5 + 
+  plot_annotation(tag_levels = "a") 
+  
 
 # p6
 # ---- save -----
