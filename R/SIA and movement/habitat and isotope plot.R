@@ -18,10 +18,16 @@ p4 <- read_rds(here("Saved Plots",
                     "c_13_temp_overall.rds"))
 p5 <- read_rds(here("Saved Plots",
                     "n_15_temp_overall.rds"))
+
+p2$layers[[2]] <- NULL
+p3$layers[[2]] <- NULL
 # ---- remove lengends -----
 p <- p + 
   theme(
-    legend.position = "none", 
+    legend.position = c(0.88, 0.84),
+    legend.background = element_blank(),
+    legend.title = element_text(hjust = 0.5),
+    # legend.position = "none", 
     plot.tag.position  = c(0.20, 0.96)
   )
 p1 <- p1 + 
@@ -32,12 +38,12 @@ p1 <- p1 +
 p2 <- p2 + 
   theme(
     legend.position = "none",
-    plot.tag.position  = c(0.21, 0.96)
+    plot.tag.position  = c(0.20, 0.96)
   )
 p3 <- p3 + 
   theme(
     legend.position = "none",
-    plot.tag.position  = c(0.21, 0.96)
+    plot.tag.position  = c(0.20, 0.96)
   )
 p4 <- p4 + 
   theme(
@@ -46,16 +52,18 @@ p4 <- p4 +
   )
 p5 <- p5 + 
   theme(
-    # legend.position = "none"
+    legend.position = "none",
     # legend.position = c(0.85, 0.21)
-    legend.position = c(0.15, 0.75), 
+    # legend.position = c(0.88, 0.84), 
     plot.tag.position  = c(0.20, 0.96),
-    legend.background = element_blank()
+    # legend.background = element_blank(),
+    # legend.title = element_text(hjust = 0.5)
     
     )
 # ---- combine all plots ----- 
-p6 <- p + p2 + p4 + p1 + p3 + p5 + 
-  plot_annotation(tag_levels = "a") 
+p6 <- p + p4 + p2 + p1 + p5 + p3 + 
+  plot_annotation(tag_levels = "a", 
+                  tag_suffix = ")") 
   
 
 # p6

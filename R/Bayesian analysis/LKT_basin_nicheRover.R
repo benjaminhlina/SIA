@@ -43,7 +43,7 @@ fish_par <- tapply(1:nrow(df), df$basin,
                                          X = df[ii, 4:5]))
 str(fish_par)
 
-View(fish_par)
+# View(fish_par)
 # ---- separate niw.post object into sigma and mu tibbles ----- 
 # sigma
 # nick[data.table(resolution = 1:4, res_name = ), on = resolution]
@@ -277,7 +277,7 @@ ggplot() +
         legend.position = "none", 
         legend.title.align = 0.5,
         legend.background = element_blank(),
-        plot.tag.position  = c(0.95, 0.95)
+        plot.tag.position  = c(0.15, 0.97)
         ) + 
   labs(x = expression(paste(delta ^ 13, "C")), 
        y = expression(paste(delta ^ 15, "N"))) -> p4 
@@ -302,7 +302,7 @@ ggplot() +
         legend.position = "none", 
         legend.title.align = 0.5,
         legend.background = element_blank(),
-        plot.tag.position  = c(0.95, 0.95)
+        plot.tag.position  = c(0.15, 0.97)
         ) + 
   labs(x = expression(paste(delta ^ 15, "N")), 
        y = "Density") -> p5
@@ -324,15 +324,28 @@ ggplot() +
   theme_bw(base_size = 15) +
   theme(axis.text = element_text(colour = "black"),
         panel.grid = element_blank(), 
-        legend.position = c(0.1, 0.84), 
+        legend.position = c(0.9, 0.84), 
         legend.title.align = 0.5,
         legend.background = element_blank(),
-        plot.tag.position  = c(0.95, 0.95)
+        plot.tag.position  = c(0.15, 0.97)
         ) + 
   labs(x = expression(paste(delta ^ 13, "C")), 
        y = "Density") -> p6
 
 # p6
+
+
+df_sum <- df %>% 
+  group_by(basin) %>% 
+  summarise(
+    d13c_mean = mean(c_13),
+    d13c_sem = sd(c_13) / sqrt(n()),
+    d15n_mean = mean(n_15), 
+    d15n_sem = sd(n_15) / sqrt(n()),
+  ) %>% 
+  ungroup()
+df_sum
+
 
 ggplot() + 
   geom_point(data = df, aes(x = c_13, y = n_15,
@@ -341,9 +354,23 @@ ggplot() +
   ),
   shape = 21, colour = "black", 
   stroke = 0.8,
-  size = 3, alpha = 0.70) +
+  size = 2.5, alpha = 0.45) +
+  geom_point(data = df_sum, aes(x = d13c_mean, y = d15n_mean, 
+                                shape = basin), 
+             size = 4, colour = "black") +
+  geom_errorbar(data = df_sum, aes(
+    x = d13c_mean, y = d15n_mean,
+    ymin = d15n_mean - d15n_sem,
+    ymax = d15n_mean + d15n_sem,
+    group = basin), width = 0.1) +
+  geom_errorbar(data = df_sum, aes(
+    x = d13c_mean, y = d15n_mean,
+    xmin = d13c_mean - d13c_sem, 
+    xmax = d13c_mean + d13c_sem, 
+    group = basin), width = 0.1) +
   # scale_colour_viridis_d(begin = 0.25, end = 0.75, 
   #                        option = "D", name = "Basin") + 
+  scale_shape(name = "Basin") + 
   scale_fill_viridis_d(begin = 0.25, end = 0.75,
                        option = "D", name = "Basin") +
   scale_x_continuous(breaks = rev(seq(-20, -39, -1))) +
@@ -351,21 +378,21 @@ ggplot() +
   theme_bw(base_size = 15) +
   theme(axis.text = element_text(colour = "black"),
         panel.grid = element_blank(), 
-        legend.position = "none", 
+        legend.position = c(0.9, 0.84), 
         legend.title.align = 0.5,
         legend.background = element_blank(), 
-        plot.tag.position  = c(0.95, 0.95)
+        plot.tag.position  = c(0.15, 0.97)
         ) + 
   labs(x = expression(paste(delta ^ 13, "C")), 
        y = expression(paste(delta ^ 15, "N"))) -> p7
 
 # p7
-
 p8 <- p5 + p4 + p7 + p6 + 
-  plot_annotation(tag_levels = "a") 
+  plot_annotation(tag_levels = "a",
+                  tag_suffix = ")") 
   
 
-p8
+# p8
 
 
 

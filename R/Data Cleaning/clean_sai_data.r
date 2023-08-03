@@ -38,8 +38,23 @@ fish_meta <- fish_meta %>%
                         false = wt_g)
   )
 
+View(fish_meta)
 
+lt_meta_f <- fish_meta %>% 
+  filter(vemco_tag != is.na(vemco_tag)) %>% 
+  group_by(year, vemco_tag, vemco_type, min_delay, max_delay) %>% 
+  summarise(
+    n = n(), 
+    tl = mean(tl_mm), 
+    tl_sem = sd(tl_mm) / sqrt(n()), 
+    wt = mean(wt_g), 
+    wt_sem = sd(wt_g) / sqrt(n())
+  ) %>% 
+  ungroup()
 
+lt_meta_f %>% 
+  openxlsx::write.xlsx(., here("Results", 
+                               "table_1_sai_a.xlsx"))
 
 
 

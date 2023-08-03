@@ -104,7 +104,7 @@ df_mu_long <- df_mu %>%
     ) 
   )
 
-df_sigma <- df_sigma %>%
+df_sigma_cn <- df_sigma_cn %>%
   mutate(
     element_id = case_when(
       id == "d15n" ~ "N",
@@ -128,6 +128,8 @@ df_sigma <- df_sigma %>%
     ) 
   )
 
+
+df_sigma_cn
 # ---- density plots ggplot ----
 
 
@@ -183,20 +185,16 @@ posterior_plots <- df_mu_long %>%
 
 
 p <- posterior_plots$d15n + 
-  theme(legend.position = c(0.10, 0.88)) 
-
-p1 <- posterior_plots$d13c
-p2 <- posterior_plots$d34s
+  theme(legend.position = c(0.10, 0.82)) 
 
 
-p3 <- p + p1 + p2 
+p3 <- p + posterior_plots$d13c + posterior_plots$d34s
 
 p3
 
-vignette(package = "nicheROVER", "ecol-vignette")
-glimpse(df_sigma)
+glimpse(df_sigma_cn)
 
-sigma_plots <- df_sigma %>% 
+sigma_plots <- df_sigma_cn %>% 
   group_split(id, isotopes) %>% 
   imap(
     ~ ggplot(data = ., aes(x = post_sample)) +
@@ -226,23 +224,15 @@ sigma_plots <- df_sigma %>%
   )
 
 
-length(sigma_plots)
-
-p4 <- sigma_plots[[9]] + 
+p4 <- sigma_plots[[1]] + 
   theme(legend.position = c(0.88, 0.7)) 
 
 
-p5 <- sigma_plots[[1]] + 
-  sigma_plots[[2]] +
-  sigma_plots[[3]] +
-  sigma_plots[[4]] +
-  sigma_plots[[5]] +
-  sigma_plots[[6]] +
-  sigma_plots[[7]] +
-  sigma_plots[[8]] +
-  p4
+p5 <- p4 + sigma_plots[[2]] + 
+  sigma_plots[[4]]
 
 p5
+ 
 # ---- niche.plot ------
 # 
 # clrs <- c("black", "blue", "orange")
@@ -266,10 +256,11 @@ p.ell <- 0.95
 species_name <- unique(df_sigma_wide$species)
 
 all_ellipses <- list()
-
+# i = 1
+# j = 1
 # for loop over speciess and sample number within species to create each 
 # sample numbers ellipi 
-for (i in 1:4) {
+for (i in 1:length(species_name)) {
   
   sigma_species <- df_sigma_wide %>% 
     filter(species %in% species_name[i])
@@ -286,22 +277,22 @@ for (i in 1:4) {
     
     sigma_ind <- sigma_species %>%
       filter(sample_number %in% sample_number[j]) %>% 
-      select(d15n, d13c, d34s)
+      dplyr::select(d15n, d13c) 
+    sigma_ind <- sigma_ind[1:2,]
     
-    Sigma <- as.matrix(sigma_ind, 3, 3)
-    row.names(Sigma) <- c("d15n", "d13c", "d34s")
+    Sigma <- as.matrix(sigma_ind, 2, 2)
+    row.names(Sigma) <- c("d15n", "d13c")
     
     mu <- mu_species %>%
       filter(sample_number %in% sample_number[j]) %>% 
-      select(sample_number, d15n, d13c, d34s) %>% 
+      dplyr::select(sample_number, d15n, d13c, d34s) %>% 
       pivot_longer(cols = -sample_number, 
                    names_to = "isotope", 
                    values_to = "mu") %>% 
       .$mu
     
     
-    
-    out <- ellipse::ellipse(Sigma, centre = mu , level = p.ell)
+    out <- ellipse::ellipse(Sigma, centre = mu, which = c(1, 2), level = p.ell)
     
     ell <- rbind(ell, out)
     post.id <- c(post.id, rep(j, nrow(out)))
@@ -312,6 +303,7 @@ for (i in 1:4) {
   all_ellipses[[i]] <- ell
 }
 
+glimpse(all_ellipses)
 # combine ellipose list into dataframe and add species names back in 
 ellipse_df <- bind_rows(all_ellipses, .id = "id") %>% 
   mutate(
@@ -365,7 +357,7 @@ ggplot() +
         legend.background = element_blank()) + 
   labs(x = expression(paste(delta ^ 13, "C")), 
        y = expression(paste(delta ^ 15, "N"))) -> p4 
-# p4
+p4
 
 ggplot() + 
   geom_density(data = df, aes(x = d15n, 
@@ -439,7 +431,8 @@ ggplot() +
 
 # p7
 
-p8 <- p5 + p4 + p7 + p6
+p8 <- p5 + p4 + p7 + p6 + 
+  plot_ann
 
 p8
 
@@ -619,7 +612,7 @@ p10 <- ggplot(data = over_stat_df_95, aes(x = mc_nr_perc)) +
                  "Niche Region Size: 95%"), 
        y = "Frequency")
 
-# p10
+p10
 
 ggsave(filename = here("Plots",
                        "nicheROVER plots", 
